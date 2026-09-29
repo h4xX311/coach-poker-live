@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coach Poker Live</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      color: #e0e0e0;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 16px;
+    }
+
+    header h1 {
+      font-size: 1.6em;
+      color: #ffd700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+
+    header p {
+      color: #aaa;
+      margin-top: 4px;
+      font-size: 0.9em;
+    }
+
+    /* Steps indicator */
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .step-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85em;
+      font-weight: 700;
+      background: rgba(255,255,255,0.1);
+      color: #888;
+      border: 2px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .step-dot.active {
+      background: rgba(255, 215, 0, 0.2);
+      color: #ffd700;
+      border-color: #ffd700;
+    }
+
+    .step-dot.done {
+      background: rgba(16, 185, 129, 0.2);
+      color: #10b981;
+      border-color: #10b981;
+    }
+
+    /* Cards */
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(10px);
+    }
+
+    .card h2 {
+      font-size: 1em;
+      color: #ffd700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Hand input */
+    .hand-input {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .hand-input input {
+      flex: 1;
+      padding: 14px 18px;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.3);
+      color: #fff;
+      font-size: 1.4em;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: border-color 0.2s;
+    }
+
+    .hand-input input:focus {
+      outline: none;
+      border-color: #ffd700;
+    }
+
+    /* Position selector */
+    .position-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .pos-btn {
+      padding: 12px 8px;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      color: #ccc;
+      font-size: 0.9em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .pos-btn:hover {
+      border-color: rgba(255, 215, 0, 0.5);
+      color: #ffd700;
+    }
+
+    .pos-btn.selected {
+      background: rgba(255, 215, 0, 0.15);
+      border-color: #ffd700;
+      color: #ffd700;
+    }
+
+    /* Action buttons */
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .action-btn {
+      padding: 14px 12px;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      color: #ccc;
+      font-size: 0.95em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .action-btn:hover {
+      border-color: rgba(255, 215, 0, 0.5);
+      color: #ffd700;
+    }
+
+    .action-btn.selected {
+      background: rgba(255, 215, 0, 0.15);
+      border-color: #ffd700;
+      color: #ffd700;
+    }
+
+    /* Amount inputs */
+    .amount-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .amount-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .amount-group label {
+      font-size: 0.8em;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .amount-group input {
+      padding: 12px 14px;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      color: #fff;
+      font-size: 1.1em;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+
+    .amount-group input:focus {
+      outline: none;
+      border-color: #ffd700;
+    }
+
+    /* Street selector */
+    .street-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .street-btn {
+      padding: 10px 6px;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      color: #ccc;
+      font-size: 0.85em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .street-btn:hover {
+      border-color: rgba(255, 215, 0, 0.5);
+      color: #ffd700;
+    }
+
+    .street-btn.selected {
+      background: rgba(255, 215, 0, 0.15);
+      border-color: #ffd700;
+      color: #ffd700;
+    }
+
+    /* Submit button */
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.05em;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ffd700, #ffaa00);
+      color: #1a1a2e;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ccc;
+      margin-top: 8px;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Result */
+    .result {
+      display: none;
+    }
+
+    .result.show {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .verdict {
+      text-align: center;
+      padding: 24px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+    }
+
+    .verdict.fold { background: rgba(239, 68, 68, 0.15); border: 2px solid rgba(239, 68, 68, 0.3); }
+    .verdict.call { background: rgba(59, 130, 246, 0.15); border: 2px solid rgba(59, 130, 246, 0.3); }
+    .verdict.raise { background: rgba(16, 185, 129, 0.15); border: 2px solid rgba(16, 185, 129, 0.3); }
+
+    .verdict-action {
+      font-size: 2.5em;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+    }
+
+    .verdict.fold .verdict-action { color: #ef4444; }
+    .verdict.call .verdict-action { color: #3b82f6; }
+    .verdict.raise .verdict-action { color: #10b981; }
+
+    .verdict-reason {
+      margin-top: 12px;
+      color: #ccc;
+      font-size: 0.95em;
+      line-height: 1.5;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat-box {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.4em;
+      font-weight: 700;
+      color: #ffd700;
+    }
+
+    .stat-label {
+      font-size: 0.7em;
+      color: #888;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .explanation {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 0.88em;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      max-height: 350px;
+      overflow-y: auto;
+    }
+
+    .hand-display {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .card-suit {
+      width: 56px;
+      height: 78px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6em;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .card-suit.red { background: linear-gradient(135deg, #fff, #f0f0f0); color: #d32f2f; }
+    .card-suit.black { background: linear-gradient(135deg, #fff, #f0f0f0); color: #222; }
+
+    .card-suit .suit-small {
+      font-size: 0.85em;
+      margin-top: 2px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      display: none;
+    }
+
+    .loading.show { display: block; }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 215, 0, 0.2);
+      border-top-color: #ffd700;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #fca5a5;
+      margin-bottom: 16px;
+      display: none;
+      font-size: 0.9em;
+    }
+
+    .error.show { display: block; }
+
+    /* Hidden sections */
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    /* Fold equity slider */
+    .slider-group {
+      margin-bottom: 16px;
+    }
+
+    .slider-group label {
+      display: block;
+      font-size: 0.8em;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .slider-group input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .slider-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #ffd700;
+      cursor: pointer;
+    }
+
+    .slider-value {
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: 700;
+      color: #ffd700;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 480px) {
+      .position-grid { grid-template-columns: repeat(3, 1fr); }
+      .street-grid { grid-template-columns: repeat(2, 1fr); }
+      .amount-row { grid-template-columns: 1fr; }
+      header h1 { font-size: 1.3em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🃏 Coach Poker Live</h1>
+      <p>Tu entrenador estratégico de póker en vivo</p>
+    </header>
+
+    <!-- Steps indicator -->
+    <div class="steps">
+      <div class="step-dot active" id="stepDot1">1</div>
+      <div class="step-dot" id="stepDot2">2</div>
+      <div class="step-dot" id="stepDot3">3</div>
+    </div>
+
+    <!-- STEP 1: Tu mano y posición -->
+    <div class="section active" id="section1">
+      <div class="card">
+        <h2>🎴 Tu mano</h2>
+        <div class="hand-input">
+          <input type="text" id="handCode" placeholder="97s" maxlength="3" style="text-transform: uppercase;" autocomplete="off">
+        </div>
+
+        <h2>📍 Tu posición</h2>
+        <div class="position-grid">
+          <button class="pos-btn" data-pos="UTG" onclick="selectPos(this)">UTG</button>
+          <button class="pos-btn" data-pos="HJ" onclick="selectPos(this)">HJ</button>
+          <button class="pos-btn" data-pos="CO" onclick="selectPos(this)">CO</button>
+          <button class="pos-btn" data-pos="BTN" onclick="selectPos(this)">BTN</button>
+          <button class="pos-btn" data-pos="SB" onclick="selectPos(this)">SB</button>
+          <button class="pos-btn" data-pos="BB" onclick="selectPos(this)">BB</button>
+        </div>
+
+        <div class="error" id="error1"></div>
+        <button class="btn btn-primary" onclick="goToStep2()">
+          Siguiente →
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 2: La acción -->
+    <div class="section" id="section2">
+      <div class="card">
+        <h2>⚡ ¿Qué pasó?</h2>
+
+        <div class="street-grid">
+          <button class="street-btn selected" data-street="preflop" onclick="selectStreet(this)">Preflop</button>
+          <button class="street-btn" data-street="flop" onclick="selectStreet(this)">Flop</button>
+          <button class="street-btn" data-street="turn" onclick="selectStreet(this)">Turn</button>
+          <button class="street-btn" data-street="river" onclick="selectStreet(this)">River</button>
+        </div>
+
+        <div id="preflopActions">
+          <div class="action-grid">
+            <button class="action-btn" data-action="raise" onclick="selectAction(this)">Te subieron</button>
+            <button class="action-btn" data-action="bet" onclick="selectAction(this)">Te apostaron</button>
+            <button class="action-btn" data-action="call" onclick="selectAction(this)">Te igualaron</button>
+            <button class="action-btn" data-action="check" onclick="selectAction(this)">Check</button>
+          </div>
+        </div>
+
+        <div class="amount-row">
+          <div class="amount-group">
+            <label>Pot size</label>
+            <input type="number" id="potSize" value="100" min="0" step="1">
+          </div>
+          <div class="amount-group">
+            <label>¿Cuánto pagar?</label>
+            <input type="number" id="callAmount" value="30" min="0" step="1">
+          </div>
+        </div>
+
+        <div class="amount-row">
+          <div class="amount-group">
+            <label>¿Cuánto subir?</label>
+            <input type="number" id="raiseAmount" value="80" min="0" step="1">
+          </div>
+          <div class="amount-group">
+            <label>Tu stack</label>
+            <input type="number" id="stackSize" value="1000" min="0" step="10">
+          </div>
+        </div>
+
+        <div class="slider-group">
+          <label>¿Qué tan probable es que el rival se retire?</label>
+          <input type="range" id="foldEquity" min="0" max="100" value="30" oninput="updateSlider(this.value)">
+          <div class="slider-value" id="foldEquityValue">30%</div>
+        </div>
+
+        <div class="error" id="error2"></div>
+        <button class="btn btn-primary" onclick="analyze()">
+          🎯 Analizar mano
+        </button>
+        <button class="btn btn-secondary" onclick="goToStep1()">
+          ← Volver
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>Analizando mano...</p>
+    </div>
+
+    <!-- STEP 3: Resultado -->
+    <div class="section" id="section3">
+      <div class="card">
+        <h2>🎴 Tus cartas</h2>
+        <div class="hand-display" id="handDisplay"></div>
+      </div>
+
+      <div class="verdict" id="verdict">
+        <div class="verdict-action" id="verdictAction"></div>
+        <div class="verdict-reason" id="verdictReason"></div>
+      </div>
+
+      <div class="card">
+        <h2>📊 Estadísticas</h2>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-value" id="statEquity">--</div>
+            <div class="stat-label">Equity</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statPotOdds">--</div>
+            <div class="stat-label">Pot Odds</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statEV">--</div>
+            <div class="stat-label">EV</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statStyle">--</div>
+            <div class="stat-label">Estilo</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📚 Explicación completa</h2>
+        <div class="explanation" id="explanation"></div>
+      </div>
+
+      <button class="btn btn-primary" onclick="resetAll()">
+        🔄 Nueva mano
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const SUIT_SYMBOLS = { s: '♠', h: '♥', d: '♦', c: '♣' };
+    const RANK_NAMES = { 14: 'A', 13: 'K', 12: 'Q', 11: 'J', 10: 'T' };
+
+    let selectedPosition = null;
+    let selectedStreet = 'preflop';
+    let selectedAction = null;
+
+    function getRankName(r) {
+      return RANK_NAMES[r] || String(r);
+    }
+
+    function selectPos(btn) {
+      document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedPosition = btn.dataset.pos;
+    }
+
+    function selectStreet(btn) {
+      document.querySelectorAll('.street-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedStreet = btn.dataset.street;
+    }
+
+    function selectAction(btn) {
+      document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedAction = btn.dataset.action;
+    }
+
+    function updateSlider(val) {
+      document.getElementById('foldEquityValue').textContent = val + '%';
+    }
+
+    function showStep(n) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById('section' + n).classList.add('active');
+
+      for (let i = 1; i <= 3; i++) {
+        const dot = document.getElementById('stepDot' + i);
+        dot.classList.remove('active', 'done');
+        if (i < n) dot.classList.add('done');
+        else if (i === n) dot.classList.add('active');
+      }
+    }
+
+    function goToStep1() {
+      showStep(1);
+    }
+
+    function goToStep2() {
+      const handCode = document.getElementById('handCode').value.trim();
+      const error = document.getElementById('error1');
+
+      if (!handCode) {
+        error.textContent = 'Ingresa tu mano (ej: 97s, AKo)';
+        error.classList.add('show');
+        return;
+      }
+
+      if (!selectedPosition) {
+        error.textContent = 'Selecciona tu posición';
+        error.classList.add('show');
+        return;
+      }
+
+      error.classList.remove('show');
+      showStep(2);
+    }
+
+    function renderCards(hand) {
+      const display = document.getElementById('handDisplay');
+      display.innerHTML = '';
+      [hand.card1, hand.card2].forEach(card => {
+        const isRed = card.suit === 'h' || card.suit === 'd';
+        const div = document.createElement('div');
+        div.className = `card-suit ${isRed ? 'red' : 'black'}`;
+        div.innerHTML = `
+          <div>${getRankName(card.rank)}</div>
+          <div class="suit-small">${SUIT_SYMBOLS[card.suit]}</div>
+        `;
+        display.appendChild(div);
+      });
+    }
+
+    async function analyze() {
+      const error = document.getElementById('error2');
+      error.classList.remove('show');
+
+      const handCode = document.getElementById('handCode').value.trim();
+      const position = selectedPosition;
+      const potSize = parseFloat(document.getElementById('potSize').value) || 0;
+      const callAmount = parseFloat(document.getElementById('callAmount').value) || 0;
+      const raiseAmount = parseFloat(document.getElementById('raiseAmount').value) || 0;
+      const stackSize = parseFloat(document.getElementById('stackSize').value) || 1000;
+      const foldEquity = parseFloat(document.getElementById('foldEquity').value) || 0;
+
+      // Mostrar loading
+      document.getElementById('section2').classList.remove('active');
+      document.getElementById('loading').classList.add('show');
+
+      try {
+        const params = {
+          handCode: handCode,
+          position: position,
+          potSize: potSize,
+          callAmount: callAmount,
+          raiseAmount: raiseAmount,
+          villainPosition: 'BTN',
+          villainAction: selectedAction || 'raise',
+          stackSize: stackSize,
+          numPlayers: 6,
+          foldEquity: foldEquity
+        };
+
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params)
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // Render resultado
+        renderCards(data.hand);
+
+        const verdict = document.getElementById('verdict');
+        const action = data.recommendation.action;
+        verdict.className = `verdict ${action.toLowerCase()}`;
+        document.getElementById('verdictAction').textContent = action;
+        document.getElementById('verdictReason').textContent = data.recommendation.reasoning;
+
+        document.getElementById('statEquity').textContent = data.analysis.equity.equity + '%';
+        document.getElementById('statPotOdds').textContent = data.analysis.potOdds.potOddsPercent + '%';
+        document.getElementById('statEV').textContent = (data.analysis.lines.lines[0].ev > 0 ? '+' : '') + data.analysis.lines.lines[0].ev;
+        document.getElementById('statStyle').textContent = data.recommendation.styleNote ? 'Detectado' : '—';
+
+        document.getElementById('explanation').textContent = data.explanation;
+
+        document.getElementById('loading').classList.remove('show');
+        showStep(3);
+
+      } catch (e) {
+        document.getElementById('loading').classList.remove('show');
+        document.getElementById('section2').classList.add('active');
+        error.textContent = e.message;
+        error.classList.add('show');
+      }
+    }
+
+    function resetAll() {
+      document.getElementById('handCode').value = '';
+      document.getElementById('potSize').value = '100';
+      document.getElementById('callAmount').value = '30';
+      document.getElementById('raiseAmount').value = '80';
+      document.getElementById('stackSize').value = '1000';
+      document.getElementById('foldEquity').value = '30';
+      document.getElementById('foldEquityValue').textContent = '30%';
+
+      selectedPosition = null;
+      selectedAction = null;
+      document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
+
+      showStep(1);
+    }
+
+    // Enter para avanzar
+    document.getElementById('handCode').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') goToStep2();
+    });
+  </script>
+</body>
+</html>

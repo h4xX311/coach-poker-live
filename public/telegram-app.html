@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Coach Poker Live</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #1a1a2e;
+      --bg2: #16213e;
+      --bg3: #0f3460;
+      --card: rgba(255,255,255,0.05);
+      --card-border: rgba(255,255,255,0.1);
+      --text: #e0e0e0;
+      --text-dim: #aaa;
+      --gold: #ffd700;
+      --gold2: #ffaa00;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --green: #10b981;
+      --radius: 12px;
+    }
+    [data-theme="light"] {
+      --bg: #f5f5f5;
+      --bg2: #ffffff;
+      --bg3: #e8e8e8;
+      --card: rgba(0,0,0,0.03);
+      --card-border: rgba(0,0,0,0.1);
+      --text: #1a1a2e;
+      --text-dim: #666;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 12px;
+      transition: background 0.3s, color 0.3s;
+    }
+    .container { max-width: 400px; margin: 0 auto; }
+    header { text-align: center; padding: 12px 0; }
+    header h1 { font-size: 1.3em; color: var(--gold); }
+    header p { color: var(--text-dim); font-size: 0.8em; margin-top: 2px; }
+
+    /* Progress bar */
+    .progress-bar {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .progress-step {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75em;
+      color: var(--text-dim);
+    }
+    .progress-step.active { color: var(--gold); font-weight: 700; }
+    .progress-step.done { color: var(--green); }
+    .progress-dot {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7em; font-weight: 700;
+      background: var(--card);
+      border: 2px solid var(--card-border);
+    }
+    .progress-step.active .progress-dot { border-color: var(--gold); background: rgba(255,215,0,0.15); }
+    .progress-step.done .progress-dot { border-color: var(--green); background: rgba(16,185,129,0.15); }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .card h2 { font-size: 0.95em; color: var(--gold); margin-bottom: 12px; }
+    .card h3 { font-size: 0.85em; color: var(--text-dim); margin-bottom: 8px; }
+
+    /* Hand display */
+    .hand-display { display: flex; justify-content: center; gap: 10px; margin-bottom: 12px; }
+    .card-suit {
+      width: 52px; height: 72px;
+      border-radius: 8px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-size: 1.5em; font-weight: 700;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+      animation: dealCard 0.4s ease-out;
+    }
+    .card-suit.red { background: linear-gradient(135deg, #fff, #f0f0f0); color: #d32f2f; }
+    .card-suit.black { background: linear-gradient(135deg, #fff, #f0f0f0); color: #222; }
+    .card-suit .suit-small { font-size: 0.75em; margin-top: 2px; }
+    @keyframes dealCard {
+      from { transform: translateY(-20px) rotate(-5deg); opacity: 0; }
+      to { transform: translateY(0) rotate(0); opacity: 1; }
+    }
+
+    /* Board cards */
+    .board-display { display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; }
+    .board-card {
+      width: 40px; height: 56px;
+      border-radius: 6px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-size: 1.1em; font-weight: 700;
+      background: linear-gradient(135deg, #fff, #f0f0f0);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      animation: dealCard 0.4s ease-out;
+    }
+    .board-card.red { color: #d32f2f; }
+    .board-card.black { color: #222; }
+    .board-card.empty {
+      background: var(--card);
+      border: 2px dashed var(--card-border);
+      color: var(--text-dim);
+      box-shadow: none;
+    }
+
+    /* Input styles */
+    .hand-input input {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid var(--card-border);
+      border-radius: 10px;
+      background: rgba(0,0,0,0.3);
+      color: var(--text);
+      font-size: 1.4em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .hand-input input:focus { outline: none; border-color: var(--gold); }
+
+    /* Position selector */
+    .position-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .pos-btn {
+      padding: 12px 8px;
+      border: 2px solid var(--card-border);
+      border-radius: 10px;
+      background: rgba(0,0,0,0.2);
+      color: var(--text);
+      font-size: 0.9em;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .pos-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .pos-btn.selected { background: rgba(255,215,0,0.15); border-color: var(--gold); color: var(--gold); }
+
+    /* Action buttons */
+    .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+    .action-btn {
+      padding: 12px 10px;
+      border: 2px solid var(--card-border);
+      border-radius: 10px;
+      background: rgba(0,0,0,0.2);
+      color: var(--text);
+      font-size: 0.9em;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .action-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .action-btn.selected { background: rgba(255,215,0,0.15); border-color: var(--gold); color: var(--gold); }
+
+    /* Amount inputs */
+    .amount-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .amount-group label { display: block; font-size: 0.75em; color: var(--text-dim); margin-bottom: 4px; text-transform: uppercase; }
+    .amount-group input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid var(--card-border);
+      border-radius: 10px;
+      background: rgba(0,0,0,0.3);
+      color: var(--text);
+      font-size: 1.1em;
+      text-align: center;
+    }
+    .amount-group input:focus { outline: none; border-color: var(--gold); }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.05em;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: linear-gradient(135deg, var(--gold), var(--gold2)); color: #1a1a2e; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(255,215,0,0.3); }
+    .btn-primary:disabled { opacity: 0.5; }
+    .btn-secondary { background: var(--card); color: var(--text); margin-top: 8px; border: 1px solid var(--card-border); }
+
+    /* Verdict */
+    .verdict { text-align: center; padding: 20px; border-radius: 12px; margin-bottom: 12px; }
+    .verdict.fold { background: rgba(239,68,68,0.15); border: 2px solid rgba(239,68,68,0.3); }
+    .verdict.call { background: rgba(59,130,246,0.15); border: 2px solid rgba(59,130,246,0.3); }
+    .verdict.raise { background: rgba(16,185,129,0.15); border: 2px solid rgba(16,185,129,0.3); }
+    .verdict-action { font-size: 2.2em; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+    .verdict.fold .verdict-action { color: var(--red); }
+    .verdict.call .verdict-action { color: var(--blue); }
+    .verdict.raise .verdict-action { color: var(--green); }
+    .verdict-reason { margin-top: 10px; color: var(--text); font-size: 0.9em; line-height: 1.5; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .stat-box { background: rgba(0,0,0,0.2); border-radius: 8px; padding: 12px; text-align: center; }
+    .stat-value { font-size: 1.3em; font-weight: 700; color: var(--gold); }
+    .stat-label { font-size: 0.7em; color: var(--text-dim); text-transform: uppercase; margin-top: 2px; }
+
+    /* Explanation */
+    .explanation {
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 0.85em;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    /* AI Coaching */
+    .ai-coaching {
+      background: rgba(255,215,0,0.05);
+      border: 1px solid rgba(255,215,0,0.2);
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 12px;
+      font-size: 0.85em;
+      line-height: 1.6;
+    }
+    .ai-coaching h3 { color: var(--gold); font-size: 0.95em; margin-bottom: 8px; }
+
+    /* Loading */
+    .loading { text-align: center; padding: 30px; display: none; }
+    .loading.show { display: block; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid rgba(255,215,0,0.2);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error */
+    .error {
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #fca5a5;
+      margin-bottom: 12px;
+      display: none;
+      font-size: 0.9em;
+    }
+    .error.show { display: block; }
+
+    /* Sections */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* Situation badge */
+    .situation-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75em;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .situation-badge.preflop { background: rgba(59,130,246,0.15); color: var(--blue); }
+    .situation-badge.flop { background: rgba(16,185,129,0.15); color: var(--green); }
+    .situation-badge.turn { background: rgba(255,215,0,0.15); color: var(--gold); }
+    .situation-badge.river { background: rgba(239,68,68,0.15); color: var(--red); }
+
+    /* Next step hint */
+    .next-step {
+      text-align: center;
+      padding: 12px;
+      background: rgba(255,215,0,0.05);
+      border: 1px solid rgba(255,215,0,0.2);
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 0.85em;
+      color: var(--gold);
+    }
+
+    /* Hand summary */
+    .hand-summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--card-border);
+      font-size: 0.85em;
+    }
+    .hand-summary:last-child { border-bottom: none; }
+    .summary-label { color: var(--text-dim); }
+    .summary-value { font-weight: 600; color: var(--gold); }
+
+    /* Betting round indicator */
+    .round-indicator {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75em;
+      font-weight: 600;
+      margin-bottom: 10px;
+      background: rgba(255,255,255,0.1);
+      color: var(--text);
+    }
+
+    /* Action history */
+    .action-history {
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 12px;
+      font-size: 0.8em;
+    }
+    .action-history h4 { color: var(--gold); font-size: 0.9em; margin-bottom: 6px; }
+    .history-item { padding: 4px 0; border-bottom: 1px solid var(--card-border); }
+    .history-item:last-child { border-bottom: none; }
+
+    /* Flow control */
+    .flow-control {
+      background: rgba(255,215,0,0.05);
+      border: 1px solid rgba(255,215,0,0.2);
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+    .flow-control h3 { color: var(--gold); font-size: 0.9em; margin-bottom: 8px; }
+
+    /* Preflop charts */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(13, 1fr);
+      gap: 2px;
+      margin-bottom: 12px;
+    }
+    .chart-cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6em;
+      font-weight: 700;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chart-cell:hover { transform: scale(1.1); }
+    .chart-cell.raise { background: rgba(239,68,68,0.7); color: #fff; }
+    .chart-cell.call { background: rgba(59,130,246,0.7); color: #fff; }
+    .chart-cell.fold { background: rgba(100,100,100,0.3); color: var(--text-dim); }
+    .chart-cell.empty { background: transparent; }
+    .chart-legend {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 0.75em;
+    }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .legend-color { width: 12px; height: 12px; border-radius: 2px; }
+    .legend-color.raise { background: rgba(239,68,68,0.7); }
+    .legend-color.call { background: rgba(59,130,246,0.7); }
+    .legend-color.fold { background: rgba(100,100,100,0.3); }
+    .charts-select {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid var(--card-border);
+      border-radius: 8px;
+      background: rgba(0,0,0,0.3);
+      color: var(--text);
+      font-size: 0.9em;
+      margin-bottom: 12px;
+    }
+    .charts-select:focus { outline: none; border-color: var(--gold); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🃏 Coach Poker Live</h1>
+      <p>Tu guía paso a paso en cada mano — CoinPoker</p>
+      <button class="btn btn-secondary" onclick="showCharts()" style="margin-top:8px;padding:8px 16px;font-size:0.85em;">📊 Ver tablas preflop</button>
+    </header>
+
+    <!-- Progress bar -->
+    <div class="progress-bar" id="progressBar">
+      <div class="progress-step active" id="step1">
+        <div class="progress-dot">1</div>
+        <span>Preflop</span>
+      </div>
+      <div class="progress-step" id="step2">
+        <div class="progress-dot">2</div>
+        <span>Flop</span>
+      </div>
+      <div class="progress-step" id="step3">
+        <div class="progress-dot">3</div>
+        <span>Turn</span>
+      </div>
+      <div class="progress-step" id="step4">
+        <div class="progress-dot">4</div>
+        <span>River</span>
+      </div>
+    </div>
+
+    <!-- STEP 1: PREFLOP - Tu mano y posición -->
+    <div class="section active" id="section1">
+      <div class="card">
+        <h2>🎴 ¿Qué mano tienes?</h2>
+        <div class="hand-input">
+          <input type="text" id="handCode" placeholder="Ej: 97s, AKo" maxlength="3" style="text-transform: uppercase;" autocomplete="off">
+        </div>
+        <h2>📍 ¿En qué posición estás?</h2>
+        <div class="position-grid">
+          <button class="pos-btn" data-pos="UTG" onclick="selectPos(this)">UTG</button>
+          <button class="pos-btn" data-pos="HJ" onclick="selectPos(this)">HJ</button>
+          <button class="pos-btn" data-pos="CO" onclick="selectPos(this)">CO</button>
+          <button class="pos-btn" data-pos="BTN" onclick="selectPos(this)">BTN</button>
+          <button class="pos-btn" data-pos="SB" onclick="selectPos(this)">SB</button>
+          <button class="pos-btn" data-pos="BB" onclick="selectPos(this)">BB</button>
+        </div>
+        <div class="error" id="error1"></div>
+        <button class="btn btn-primary" onclick="startHand()">Comenzar mano →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: PREFLOP - Rivales y situación -->
+    <div class="section" id="section2">
+      <div class="card">
+        <h2>📋 Tu mano</h2>
+        <div class="hand-display" id="handDisplay1"></div>
+        <div class="hand-summary">
+          <span class="summary-label">Posición:</span>
+          <span class="summary-value" id="summaryPos"></span>
+        </div>
+        <div class="hand-summary">
+          <span class="summary-label">Mano:</span>
+          <span class="summary-value" id="summaryHand"></span>
+        </div>
+        <div class="hand-summary">
+          <span class="summary-label">Ciegas:</span>
+          <span class="summary-value" id="summaryBlinds">SB: 0.5bb | BB: 1bb</span>
+        </div>
+      </div>
+      <div class="card">
+        <h2>👥 ¿Cuántos rivales hay en la mano?</h2>
+        <div class="position-grid">
+          <button class="pos-btn" data-opp="1" onclick="selectNumOpponents(this)">1</button>
+          <button class="pos-btn" data-opp="2" onclick="selectNumOpponents(this)">2</button>
+          <button class="pos-btn" data-opp="3" onclick="selectNumOpponents(this)">3</button>
+          <button class="pos-btn" data-opp="4" onclick="selectNumOpponents(this)">4</button>
+          <button class="pos-btn" data-opp="5" onclick="selectNumOpponents(this)">5</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>⚡ ¿Qué pasó antes de tu decisión?</h2>
+        <div class="round-indicator" id="roundIndicator1">Ronda 1</div>
+        <div class="action-grid">
+          <button class="action-btn" data-situation="first_to_act" onclick="selectSituation(this)">Primero en actuar</button>
+          <button class="action-btn" data-situation="facing_raise" onclick="selectSituation(this)">Open raise</button>
+          <button class="action-btn" data-situation="facing_3bet" onclick="selectSituation(this)">3-bet</button>
+          <button class="action-btn" data-situation="facing_4bet" onclick="selectSituation(this)">4-bet</button>
+          <button class="action-btn" data-situation="facing_5bet" onclick="selectSituation(this)">5-bet</button>
+          <button class="action-btn" data-situation="facing_call" onclick="selectSituation(this)">Te igualaron</button>
+          <button class="action-btn" data-situation="bb_facing_raise" onclick="selectSituation(this)">BB: Open raise</button>
+          <button class="action-btn" data-situation="bb_facing_call" onclick="selectSituation(this)">BB: Call</button>
+          <button class="action-btn" data-situation="sb_facing_raise" onclick="selectSituation(this)">SB: Open raise</button>
+          <button class="action-btn" data-situation="sb_facing_call" onclick="selectSituation(this)">SB: Call</button>
+        </div>
+        <div class="amount-row">
+          <div class="amount-group">
+            <label>Pot size</label>
+            <input type="number" id="potSize1" value="100" min="0" step="1">
+          </div>
+          <div class="amount-group">
+            <label>Tu stack</label>
+            <input type="number" id="stackSize1" value="1000" min="0" step="10">
+          </div>
+        </div>
+        <div class="error" id="error2"></div>
+        <button class="btn btn-primary" onclick="analyzePreflop()">🎯 Obtener recomendación</button>
+        <button class="btn btn-secondary" onclick="goToSection(1)">← Volver</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: PREFLOP - Resultado -->
+    <div class="section" id="section3">
+      <div class="card">
+        <h2>🎴 Tu mano</h2>
+        <div class="hand-display" id="handDisplay2"></div>
+        <div class="situation-badge preflop" id="situationBadge1">Preflop</div>
+        <div class="round-indicator" id="roundResult1">Ronda 1</div>
+      </div>
+      <div class="verdict" id="verdict1">
+        <div class="verdict-action" id="verdictAction1"></div>
+        <div class="verdict-reason" id="verdictReason1"></div>
+      </div>
+      <div class="card">
+        <h2>📊 Análisis preflop</h2>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-value" id="statEquity1">--</div>
+            <div class="stat-label">Equity</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statPreflop">--</div>
+            <div class="stat-label">Recomendado</div>
+          </div>
+        </div>
+        <div class="explanation" id="explanation1"></div>
+        <div class="ai-coaching" id="aiCoaching1" style="display:none;">
+          <h3>🤖 Coaching IA</h3>
+          <div id="aiCoachingText1"></div>
+        </div>
+      </div>
+      <div class="action-history" id="actionHistory1">
+        <h4>📜 Historial de acciones</h4>
+        <div id="historyList1"></div>
+      </div>
+      <div class="flow-control">
+        <h3>🔄 ¿Qué pasó después de tu decisión?</h3>
+        <div class="action-grid">
+          <button class="action-btn" onclick="continueStreet('preflop')">Sigo en preflop</button>
+          <button class="action-btn" onclick="goToSection(4)">Pasamos al flop</button>
+          <button class="action-btn" onclick="resetAll()">Mano terminada</button>
+        </div>
+        <p style="font-size:0.75em;color:var(--text-dim);margin-top:8px;">
+          En el póker real, cada calle puede tener múltiples rondas de apuestas.
+        </p>
+      </div>
+    </div>
+
+    <!-- STEP 4: FLOP - Cartas comunitarias -->
+    <div class="section" id="section4">
+      <div class="card">
+        <h2>🃏 ¿Qué salió en el flop?</h2>
+        <div class="board-display" id="boardDisplay1"></div>
+        <div class="amount-row">
+          <div class="amount-group">
+            <label>Carta 1</label>
+            <input type="text" id="flopCard1" placeholder="Ej: A♠" maxlength="2" style="text-transform: uppercase;">
+          </div>
+          <div class="amount-group">
+            <label>Carta 2</label>
+            <input type="text" id="flopCard2" placeholder="Ej: K♦" maxlength="2" style="text-transform: uppercase;">
+          </div>
+          <div class="amount-group">
+            <label>Carta 3</label>
+            <input type="text" id="flopCard3" placeholder="Ej: 7♣" maxlength="2" style="text-transform: uppercase;">
+          </div>
+        </div>
+        <h2>⚡ ¿Qué hizo el rival?</h2>
+        <div class="round-indicator" id="roundIndicator2">Ronda 1</div>
+        <div class="action-grid">
+          <button class="action-btn" data-villain="bet" onclick="selectVillain(this)">Apostó</button>
+          <button class="action-btn" data-villain="check" onclick="selectVillain(this)">Check</button>
+          <button class="action-btn" data-villain="raise" onclick="selectVillain(this)">Subió</button>
+          <button class="action-btn" data-villain="check_raise" onclick="selectVillain(this)">Check-raise</button>
+        </div>
+        <div class="amount-row">
+          <div class="amount-group">
+            <label>Pot size</label>
+            <input type="number" id="potSize2" value="200" min="0" step="1">
+          </div>
+          <div class="amount-group">
+            <label>¿Cuánto pagar?</label>
+            <input type="number" id="callAmount2" value="50" min="0" step="1">
+          </div>
+        </div>
+        <div class="error" id="error4"></div>
+        <button class="btn btn-primary" onclick="analyzeFlop()">🎯 Obtener recomendación</button>
+        <button class="btn btn-secondary" onclick="goToSection(3)">← Volver</button>
+      </div>
+    </div>
+
+    <!-- STEP 5: FLOP - Resultado -->
+    <div class="section" id="section5">
+      <div class="card">
+        <h2>🎴 Tu mano + Flop</h2>
+        <div class="hand-display" id="handDisplay3"></div>
+        <div class="board-display" id="boardDisplay2"></div>
+        <div class="situation-badge flop" id="situationBadge2">Flop</div>
+        <div class="round-indicator" id="roundResult2">Ronda 1</div>
+      </div>
+      <div class="verdict" id="verdict2">
+        <div class="verdict-action" id="verdictAction2"></div>
+        <div class="verdict-reason" id="verdictReason2"></div>
+      </div>
+      <div class="card">
+        <h2>📊 Análisis del flop</h2>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-value" id="statEquity2">--</div>
+            <div class="stat-label">Equity</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statPotOdds2">--</div>
+            <div class="stat-label">Pot Odds</div>
+          </div>
+        </div>
+        <div class="explanation" id="explanation2"></div>
+        <div class="ai-coaching" id="aiCoaching2" style="display:none;">
+          <h3>🤖 Coaching IA</h3>
+          <div id="aiCoachingText2"></div>
+        </div>
+      </div>
+      <div class="action-history" id="actionHistory2">
+        <h4>📜 Historial de acciones</h4>
+        <div id="historyList2"></div>
+      </div>
+      <div class="flow-control">
+        <h3>🔄 ¿Qué pasó después de tu decisión?</h3>
+        <div class="action-grid">
+          <button class="action-btn" onclick="continueStreet('flop')">Sigo en el flop</button>
+          <button class="action-btn" onclick="goToSection(6)">Pasamos al turn</button>
+          <button class="action-btn" onclick="resetAll()">Mano terminada</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 6: TURN - Carta -->
+    <div class="section" id="section6">
+      <div class="card">
+        <h2>🃏 ¿Qué salió en el turn?</h2>
+        <div class="board-display" id="boardDisplay3"></div>
+        <div class="amount-row">
+          <div class="amount-group">
+            <label>Carta del turn</label>
+            <input type="text" id="turnCard" placeholder="Ej: 5♥" maxlength="2" style="text-transform: uppercase;">
+          </div>
+        </div>
+        <h2>⚡ ¿Qué hizo el rival?</h2>
+        <div class="round-indicator" id="roundIndicator3">Ronda 1</div>
+        <div class="action-grid">
+          <button class="action-btn" data-villain="bet" onclick="selectVillain(this)">Apostó</button>
+          <button class="action-btn" data-villain="check" onclick="selectVillain(this)">Check</button>
+          <button class="action-btn" data-villain="raise" onclick="selectVillain(this)">Subió</button>
+          <button class="action-btn" data-villain="check_raise" onclick="selectVillain(this)">Check-raise</button>
+        </div>
+        <div class="amount-row">
+          <div class="amount-group">
+            <label>Pot size</label>
+            <input type="number" id="potSize3" value="400" min="0" step="1">
+          </div>
+          <div class="amount-group">
+            <label>¿Cuánto pagar?</label>
+            <input type="number" id="callAmount3" value="100" min="0" step="1">
+          </div>
+        </div>
+        <div class="error" id="error6"></div>
+        <button class="btn btn-primary" onclick="analyzeTurn()">🎯 Obtener recomendación</button>
+        <button class="btn btn-secondary" onclick="goToSection(5)">← Volver</button>
+      </div>
+    </div>
+
+    <!-- STEP 7: TURN - Resultado -->
+    <div class="section" id="section7">
+      <div class="card">
+        <h2>🎴 Tu mano + Board</h2>
+        <div class="hand-display" id="handDisplay4"></div>
+        <div class="board-display" id="boardDisplay4"></div>
+        <div class="situation-badge turn" id="situationBadge3">Turn</div>
+        <div class="round-indicator" id="roundResult3">Ronda 1</div>
+      </div>
+      <div class="verdict" id="verdict3">
+        <div class="verdict-action" id="verdictAction3"></div>
+        <div class="verdict-reason" id="verdictReason3"></div>
+      </div>
+      <div class="card">
+        <h2>📊 Análisis del turn</h2>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-value" id="statEquity3">--</div>
+            <div class="stat-label">Equity</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statPotOdds3">--</div>
+            <div class="stat-label">Pot Odds</div>
+          </div>
+        </div>
+        <div class="explanation" id="explanation3"></div>
+        <div class="ai-coaching" id="aiCoaching3" style="display:none;">
+          <h3>🤖 Coaching IA</h3>
+          <div id="aiCoachingText3"></div>
+        </div>
+      </div>
+      <div class="action-history" id="actionHistory3">
+        <h4>📜 Historial de acciones</h4>
+        <div id="historyList3"></div>
+      </div>
+      <div class="flow-control">
+        <h3>🔄 ¿Qué pasó después de tu decisión?</h3>
+        <div class="action-grid">
+          <button class="action-btn" onclick="continueStreet('turn')">Sigo en el turn</button>
+          <button class="action-btn" onclick="goToSection(8)">Pasamos al river</button>
+          <button class="action-btn" onclick="resetAll()">Mano terminada</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 8: RIVER - Carta -->
+    <div class="section" id="section8">
+      <div class="card">
+        <h2>🃏 ¿Qué salió en el river?</h2>
+        <div class="board-display" id="boardDisplay5"></div>
+        <div class="amount-row">
+          <div class="amount-group">
+            <label>Carta del river</label>
+            <input type="text" id="riverCard" placeholder="Ej: 9♦" maxlength="2" style="text-transform: uppercase;">
+          </div>
+        </div>
+        <h2>⚡ ¿Qué hizo el rival?</h2>
+        <div class="round-indicator" id="roundIndicator4">Ronda 1</div>
+        <div class="action-grid">
+          <button class="action-btn" data-villain="bet" onclick="selectVillain(this)">Apostó</button>
+          <button class="action-btn" data-villain="check" onclick="selectVillain(this)">Check</button>
+          <button class="action-btn" data-villain="raise" onclick="selectVillain(this)">Subió</button>
+          <button class="action-btn" data-villain="check_raise" onclick="selectVillain(this)">Check-raise</button>
+        </div>
+        <div class="amount-row">
+          <div class="amount-group">
+            <label>Pot size</label>
+            <input type="number" id="potSize4" value="800" min="0" step="1">
+          </div>
+          <div class="amount-group">
+            <label>¿Cuánto pagar?</label>
+            <input type="number" id="callAmount4" value="200" min="0" step="1">
+          </div>
+        </div>
+        <div class="error" id="error8"></div>
+        <button class="btn btn-primary" onclick="analyzeRiver()">🎯 Obtener recomendación</button>
+        <button class="btn btn-secondary" onclick="goToSection(7)">← Volver</button>
+      </div>
+    </div>
+
+    <!-- STEP 9: RIVER - Resultado final -->
+    <div class="section" id="section9">
+      <div class="card">
+        <h2>🎴 Mano completa</h2>
+        <div class="hand-display" id="handDisplay5"></div>
+        <div class="board-display" id="boardDisplay6"></div>
+        <div class="situation-badge river" id="situationBadge4">River</div>
+        <div class="round-indicator" id="roundResult4">Ronda 1</div>
+      </div>
+      <div class="verdict" id="verdict4">
+        <div class="verdict-action" id="verdictAction4"></div>
+        <div class="verdict-reason" id="verdictReason4"></div>
+      </div>
+      <div class="card">
+        <h2>📊 Análisis final</h2>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-value" id="statEquity4">--</div>
+            <div class="stat-label">Equity</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statPotOdds4">--</div>
+            <div class="stat-label">Pot Odds</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statEV4">--</div>
+            <div class="stat-label">EV</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statStyle4">--</div>
+            <div class="stat-label">Estilo</div>
+          </div>
+        </div>
+        <div class="explanation" id="explanation4"></div>
+        <div class="ai-coaching" id="aiCoaching4" style="display:none;">
+          <h3>🤖 Coaching IA</h3>
+          <div id="aiCoachingText4"></div>
+        </div>
+        <textarea class="notes-area" id="notesArea" placeholder="Añade notas sobre esta mano..." style="width:100%;min-height:60px;padding:10px;border:1px solid var(--card-border);border-radius:8px;background:rgba(0,0,0,0.2);color:var(--text);font-size:0.85em;resize:vertical;margin-top:8px;"></textarea>
+        <button class="share-btn" onclick="shareResult()" style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border:1px solid var(--card-border);border-radius:8px;background:var(--card);color:var(--text);font-size:0.9em;cursor:pointer;margin-top:10px;">📤 Compartir resultado</button>
+      </div>
+      <div class="flow-control">
+        <h3>🔄 ¿Qué pasó después de tu decisión?</h3>
+        <div class="action-grid">
+          <button class="action-btn" onclick="continueStreet('river')">Sigo en el river</button>
+          <button class="action-btn" onclick="resetAll()">Mano terminada</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 10: PREFLOP CHARTS -->
+    <div class="section" id="section10">
+      <div class="card">
+        <h2>📊 Tablas Preflop GTO (Red Chip Poker)</h2>
+        <p style="font-size:0.8em;color:var(--text-dim);margin-bottom:12px;">
+          Rangos basados en solvers GTO para 6-max cash games (100bb).
+        </p>
+        <select class="charts-select" id="chartSelector" onchange="renderChart()">
+          <option value="open_utg">Open Raise UTG</option>
+          <option value="open_hj">Open Raise HJ</option>
+          <option value="open_co">Open Raise CO</option>
+          <option value="open_btn">Open Raise BTN</option>
+          <option value="open_sb">Open Raise SB</option>
+          <option value="3bet_vs_utg">3-Bet vs UTG Raise</option>
+          <option value="3bet_vs_hj">3-Bet vs HJ Raise</option>
+          <option value="3bet_vs_co">3-Bet vs CO Raise</option>
+          <option value="3bet_vs_btn">3-Bet vs BTN Raise</option>
+          <option value="bb_defend">BB Defend vs Raise</option>
+        </select>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-color raise"></div> Raise</div>
+          <div class="legend-item"><div class="legend-color call"></div> Call</div>
+          <div class="legend-item"><div class="legend-color fold"></div> Fold</div>
+        </div>
+        <div class="charts-grid" id="chartsGrid"></div>
+        <p style="font-size:0.75em;color:var(--text-dim);margin-top:8px;">
+          Basado en Red Chip Poker GTO Ranges App. Para uso educativo.
+        </p>
+      </div>
+      <button class="btn btn-secondary" onclick="goToSection(1)">← Volver</button>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>Analizando...</p>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      tg.setHeaderColor('#1a1a2e');
+      tg.setBackgroundColor('#1a1a2e');
+    }
+
+    const SUIT_SYMBOLS = { s: '♠', h: '♥', d: '♦', c: '♣' };
+    const RANK_NAMES = { 14: 'A', 13: 'K', 12: 'Q', 11: 'J', 10: 'T' };
+
+    let handData = {
+      handCode: '',
+      position: '',
+      street: 'preflop',
+      situation: '',
+      villainAction: '',
+      numOpponents: 1,
+      board: [],
+      potSize: 0,
+      callAmount: 0,
+      raiseAmount: 0,
+      stackSize: 1000,
+      foldEquity: 30,
+      bettingRound: 1,
+      actionHistory: []
+    };
+
+    let currentResult = null;
+
+    function getRankName(r) { return RANK_NAMES[r] || String(r); }
+
+    function selectPos(btn) {
+      document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      handData.position = btn.dataset.pos;
+    }
+
+    function selectSituation(btn) {
+      document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      handData.situation = btn.dataset.situation;
+    }
+
+    function selectVillain(btn) {
+      document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      handData.villainAction = btn.dataset.villain;
+    }
+
+    function selectNumOpponents(btn) {
+      document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      handData.numOpponents = parseInt(btn.dataset.opp);
+    }
+
+    function goToSection(n) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById('section' + n).classList.add('active');
+      updateProgress(n);
+    }
+
+    function updateProgress(sectionNum) {
+      const steps = ['step1', 'step2', 'step3', 'step4'];
+      const sectionToStep = { 1: 1, 2: 1, 3: 1, 4: 2, 5: 2, 6: 3, 7: 3, 8: 4, 9: 4 };
+      const currentStep = sectionToStep[sectionNum] || 1;
+      steps.forEach((step, i) => {
+        const el = document.getElementById(step);
+        el.classList.remove('active', 'done');
+        if (i + 1 < currentStep) el.classList.add('done');
+        else if (i + 1 === currentStep) el.classList.add('active');
+      });
+    }
+
+    function renderCards(containerId, hand) {
+      const display = document.getElementById(containerId);
+      display.innerHTML = '';
+      [hand.card1, hand.card2].forEach(card => {
+        const isRed = card.suit === 'h' || card.suit === 'd';
+        const div = document.createElement('div');
+        div.className = `card-suit ${isRed ? 'red' : 'black'}`;
+        div.innerHTML = `<div>${getRankName(card.rank)}</div><div class="suit-small">${SUIT_SYMBOLS[card.suit]}</div>`;
+        display.appendChild(div);
+      });
+    }
+
+    function renderBoard(containerId, numCards, cards) {
+      const display = document.getElementById(containerId);
+      display.innerHTML = '';
+      for (let i = 0; i < numCards; i++) {
+        const div = document.createElement('div');
+        if (cards && cards[i]) {
+          const isRed = cards[i].includes('♥') || cards[i].includes('♦') || cards[i].includes('h') || cards[i].includes('d');
+          div.className = `board-card ${isRed ? 'red' : 'black'}`;
+          div.innerHTML = `<div>${cards[i].slice(0, -1)}</div><div class="suit-small">${cards[i].slice(-1)}</div>`;
+        } else {
+          div.className = 'board-card empty';
+          div.textContent = '?';
+        }
+        display.appendChild(div);
+      }
+    }
+
+    function continueStreet(street) {
+      handData.bettingRound++;
+      handData.situation = '';
+      handData.villainAction = '';
+      
+      const roundIndicators = {
+        preflop: 'roundIndicator1',
+        flop: 'roundIndicator2',
+        turn: 'roundIndicator3',
+        river: 'roundIndicator4'
+      };
+      
+      const indicator = document.getElementById(roundIndicators[street]);
+      if (indicator) indicator.textContent = 'Ronda ' + handData.bettingRound;
+      
+      document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
+      
+      const sectionMap = { preflop: 2, flop: 4, turn: 6, river: 8 };
+      goToSection(sectionMap[street]);
+    }
+
+    function startHand() {
+      const handCode = document.getElementById('handCode').value.trim();
+      const error = document.getElementById('error1');
+      if (!handCode) { error.textContent = 'Ingresa tu mano (ej: 97s, AKo)'; error.classList.add('show'); return; }
+      if (!handData.position) { error.textContent = 'Selecciona tu posición'; error.classList.add('show'); return; }
+      error.classList.remove('show');
+      handData.handCode = handCode;
+      handData.street = 'preflop';
+      handData.situation = '';
+      handData.villainAction = '';
+      handData.board = [];
+      handData.bettingRound = 1;
+      handData.actionHistory = [];
+      
+      document.getElementById('summaryPos').textContent = handData.position;
+      document.getElementById('summaryHand').textContent = handCode.toUpperCase();
+      
+      goToSection(2);
+    }
+
+    async function analyzePreflop() {
+      const error = document.getElementById('error2');
+      error.classList.remove('show');
+      if (!handData.situation) { error.textContent = 'Selecciona la situación'; error.classList.add('show'); return; }
+      handData.potSize = parseFloat(document.getElementById('potSize1').value) || 100;
+      handData.stackSize = parseFloat(document.getElementById('stackSize1').value) || 1000;
+
+      document.getElementById('section2').classList.remove('active');
+      document.getElementById('loading').classList.add('show');
+
+      try {
+        const situationMap = {
+          first_to_act: { villainAction: 'fold', callAmount: 0, raiseAmount: 0 },
+          facing_raise: { villainAction: 'raise', callAmount: 30, raiseAmount: 80 },
+          facing_3bet: { villainAction: '3bet', callAmount: 80, raiseAmount: 200 },
+          facing_4bet: { villainAction: '4bet', callAmount: 200, raiseAmount: 500 },
+          facing_5bet: { villainAction: '5bet', callAmount: 500, raiseAmount: 1200 },
+          facing_call: { villainAction: 'call', callAmount: 30, raiseAmount: 0 },
+          bb_facing_raise: { villainAction: 'raise', callAmount: 20, raiseAmount: 50 },
+          bb_facing_call: { villainAction: 'call', callAmount: 10, raiseAmount: 0 },
+          sb_facing_raise: { villainAction: 'raise', callAmount: 20, raiseAmount: 50 },
+          sb_facing_call: { villainAction: 'call', callAmount: 10, raiseAmount: 0 }
+        };
+        const sit = situationMap[handData.situation] || situationMap.first_to_act;
+
+        const params = {
+          handCode: handData.handCode,
+          position: handData.position,
+          potSize: handData.potSize,
+          callAmount: sit.callAmount,
+          raiseAmount: sit.raiseAmount,
+          villainPosition: 'BTN',
+          villainAction: sit.villainAction,
+          stackSize: handData.stackSize,
+          numPlayers: 6,
+          foldEquity: 30,
+          street: 'preflop',
+          numOpponents: handData.numOpponents
+        };
+
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params)
+        });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+
+        currentResult = data;
+        renderCards('handDisplay2', data.hand);
+        const verdict = document.getElementById('verdict1');
+        const action = data.recommendation?.action || data.analysis?.lines?.best || 'FOLD';
+        const reason = data.recommendation?.reasoning || data.analysis?.lines?.reasoning || 'No se pudo generar recomendación';
+        verdict.className = `verdict ${action.toLowerCase()}`;
+        document.getElementById('verdictAction1').textContent = action;
+        document.getElementById('verdictReason1').textContent = reason;
+        document.getElementById('statEquity1').textContent = data.analysis.equity.equity + '%';
+        document.getElementById('statPreflop').textContent = data.analysis.preflopReference?.action || 'N/A';
+        document.getElementById('explanation1').textContent = data.explanation;
+
+        if (data.aiCoaching) {
+          document.getElementById('aiCoaching1').style.display = 'block';
+          document.getElementById('aiCoachingText1').textContent = data.aiCoaching;
+        }
+
+        document.getElementById('loading').classList.remove('show');
+        goToSection(3);
+      } catch (e) {
+        document.getElementById('loading').classList.remove('show');
+        document.getElementById('section2').classList.add('active');
+        error.textContent = e.message;
+        error.classList.add('show');
+      }
+    }
+
+    async function analyzeFlop() {
+      const error = document.getElementById('error4');
+      error.classList.remove('show');
+      if (!handData.villainAction) { error.textContent = 'Selecciona qué hizo el rival'; error.classList.add('show'); return; }
+      
+      const flopCard1 = document.getElementById('flopCard1').value.trim();
+      const flopCard2 = document.getElementById('flopCard2').value.trim();
+      const flopCard3 = document.getElementById('flopCard3').value.trim();
+      
+      if (!flopCard1 || !flopCard2 || !flopCard3) {
+        error.textContent = 'Ingresa las 3 cartas del flop';
+        error.classList.add('show');
+        return;
+      }
+      
+      handData.potSize = parseFloat(document.getElementById('potSize2').value) || 200;
+      handData.callAmount = parseFloat(document.getElementById('callAmount2').value) || 50;
+
+      document.getElementById('section4').classList.remove('active');
+      document.getElementById('loading').classList.add('show');
+
+      try {
+        const params = {
+          handCode: handData.handCode,
+          position: handData.position,
+          potSize: handData.potSize,
+          callAmount: handData.callAmount,
+          raiseAmount: handData.callAmount * 2,
+          villainPosition: 'BTN',
+          villainAction: handData.villainAction,
+          stackSize: handData.stackSize,
+          numPlayers: 6,
+          foldEquity: 30,
+          street: 'flop',
+          numOpponents: handData.numOpponents,
+          board: [flopCard1, flopCard2, flopCard3]
+        };
+
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params)
+        });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+
+        currentResult = data;
+        renderCards('handDisplay3', data.hand);
+        const flopCards = [flopCard1, flopCard2, flopCard3];
+        handData.board = flopCards;
+        renderBoard('boardDisplay2', 3, flopCards);
+        
+        const verdict = document.getElementById('verdict2');
+        const action = data.recommendation?.action || data.analysis?.lines?.best || 'FOLD';
+        const reason = data.recommendation?.reasoning || data.analysis?.lines?.reasoning || 'No se pudo generar recomendación';
+        verdict.className = `verdict ${action.toLowerCase()}`;
+        document.getElementById('verdictAction2').textContent = action;
+        document.getElementById('verdictReason2').textContent = reason;
+        document.getElementById('statEquity2').textContent = data.analysis.equity.equity + '%';
+        document.getElementById('statPotOdds2').textContent = data.analysis.potOdds.potOddsPercent + '%';
+        document.getElementById('explanation2').textContent = data.explanation;
+
+        if (data.aiCoaching) {
+          document.getElementById('aiCoaching2').style.display = 'block';
+          document.getElementById('aiCoachingText2').textContent = data.aiCoaching;
+        }
+
+        document.getElementById('loading').classList.remove('show');
+        goToSection(5);
+      } catch (e) {
+        document.getElementById('loading').classList.remove('show');
+        document.getElementById('section4').classList.add('active');
+        error.textContent = e.message;
+        error.classList.add('show');
+      }
+    }
+
+    async function analyzeTurn() {
+      const error = document.getElementById('error6');
+      error.classList.remove('show');
+      if (!handData.villainAction) { error.textContent = 'Selecciona qué hizo el rival'; error.classList.add('show'); return; }
+      
+      const turnCard = document.getElementById('turnCard').value.trim();
+      if (!turnCard) {
+        error.textContent = 'Ingresa la carta del turn';
+        error.classList.add('show');
+        return;
+      }
+      
+      handData.potSize = parseFloat(document.getElementById('potSize3').value) || 400;
+      handData.callAmount = parseFloat(document.getElementById('callAmount3').value) || 100;
+
+      document.getElementById('section6').classList.remove('active');
+      document.getElementById('loading').classList.add('show');
+
+      try {
+        const params = {
+          handCode: handData.handCode,
+          position: handData.position,
+          potSize: handData.potSize,
+          callAmount: handData.callAmount,
+          raiseAmount: handData.callAmount * 2,
+          villainPosition: 'BTN',
+          villainAction: handData.villainAction,
+          stackSize: handData.stackSize,
+          numPlayers: 6,
+          foldEquity: 30,
+          street: 'turn',
+          numOpponents: handData.numOpponents,
+          board: [...handData.board, turnCard]
+        };
+
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params)
+        });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+
+        currentResult = data;
+        renderCards('handDisplay4', data.hand);
+        const boardCards = [...handData.board, turnCard];
+        renderBoard('boardDisplay4', 4, boardCards);
+        
+        const verdict = document.getElementById('verdict3');
+        const action = data.recommendation?.action || data.analysis?.lines?.best || 'FOLD';
+        const reason = data.recommendation?.reasoning || data.analysis?.lines?.reasoning || 'No se pudo generar recomendación';
+        verdict.className = `verdict ${action.toLowerCase()}`;
+        document.getElementById('verdictAction3').textContent = action;
+        document.getElementById('verdictReason3').textContent = reason;
+        document.getElementById('statEquity3').textContent = data.analysis.equity.equity + '%';
+        document.getElementById('statPotOdds3').textContent = data.analysis.potOdds.potOddsPercent + '%';
+        document.getElementById('explanation3').textContent = data.explanation;
+
+        if (data.aiCoaching) {
+          document.getElementById('aiCoaching3').style.display = 'block';
+          document.getElementById('aiCoachingText3').textContent = data.aiCoaching;
+        }
+
+        document.getElementById('loading').classList.remove('show');
+        goToSection(7);
+      } catch (e) {
+        document.getElementById('loading').classList.remove('show');
+        document.getElementById('section6').classList.add('active');
+        error.textContent = e.message;
+        error.classList.add('show');
+      }
+    }
+
+    async function analyzeRiver() {
+      const error = document.getElementById('error8');
+      error.classList.remove('show');
+      if (!handData.villainAction) { error.textContent = 'Selecciona qué hizo el rival'; error.classList.add('show'); return; }
+      
+      const riverCard = document.getElementById('riverCard').value.trim();
+      if (!riverCard) {
+        error.textContent = 'Ingresa la carta del river';
+        error.classList.add('show');
+        return;
+      }
+      
+      handData.potSize = parseFloat(document.getElementById('potSize4').value) || 800;
+      handData.callAmount = parseFloat(document.getElementById('callAmount4').value) || 200;
+
+      document.getElementById('section8').classList.remove('active');
+      document.getElementById('loading').classList.add('show');
+
+      try {
+        const params = {
+          handCode: handData.handCode,
+          position: handData.position,
+          potSize: handData.potSize,
+          callAmount: handData.callAmount,
+          raiseAmount: handData.callAmount * 2,
+          villainPosition: 'BTN',
+          villainAction: handData.villainAction,
+          stackSize: handData.stackSize,
+          numPlayers: 6,
+          foldEquity: 30,
+          street: 'river',
+          numOpponents: handData.numOpponents,
+          board: [...handData.board, riverCard]
+        };
+
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params)
+        });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+
+        currentResult = data;
+        renderCards('handDisplay5', data.hand);
+        const boardCards = [...handData.board, riverCard];
+        renderBoard('boardDisplay6', 5, boardCards);
+        
+        const verdict = document.getElementById('verdict4');
+        const action = data.recommendation?.action || data.analysis?.lines?.best || 'FOLD';
+        const reason = data.recommendation?.reasoning || data.analysis?.lines?.reasoning || 'No se pudo generar recomendación';
+        verdict.className = `verdict ${action.toLowerCase()}`;
+        document.getElementById('verdictAction4').textContent = action;
+        document.getElementById('verdictReason4').textContent = reason;
+        document.getElementById('statEquity4').textContent = data.analysis.equity.equity + '%';
+        document.getElementById('statPotOdds4').textContent = data.analysis.potOdds.potOddsPercent + '%';
+        document.getElementById('statEV4').textContent = (data.analysis.lines.lines[0].ev > 0 ? '+' : '') + data.analysis.lines.lines[0].ev;
+        document.getElementById('statStyle4').textContent = data.recommendation.styleNote ? 'Detectado' : '—';
+        document.getElementById('explanation4').textContent = data.explanation;
+
+        if (data.aiCoaching) {
+          document.getElementById('aiCoaching4').style.display = 'block';
+          document.getElementById('aiCoachingText4').textContent = data.aiCoaching;
+        }
+
+        document.getElementById('loading').classList.remove('show');
+        goToSection(9);
+      } catch (e) {
+        document.getElementById('loading').classList.remove('show');
+        document.getElementById('section8').classList.add('active');
+        error.textContent = e.message;
+        error.classList.add('show');
+      }
+    }
+
+    function shareResult() {
+      if (!currentResult) return;
+      const text = `🃏 Coach Poker Live
+
+Mano: ${currentResult.hand?.description || 'N/A'}
+Posición: ${currentResult.recommendation?.action || currentResult.analysis?.lines?.best || 'N/A'}
+Equity: ${currentResult.analysis?.equity?.equity || 0}%
+
+${currentResult.recommendation?.reasoning || currentResult.analysis?.lines?.reasoning || 'No se pudo generar recomendación'}`;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => alert('Resultado copiado al portapapeles'));
+      }
+    }
+
+    function resetAll() {
+      handData = { handCode: '', position: '', street: 'preflop', situation: '', villainAction: '', numOpponents: 1, board: [], potSize: 0, callAmount: 0, raiseAmount: 0, stackSize: 1000, foldEquity: 30, bettingRound: 1, actionHistory: [] };
+      document.getElementById('handCode').value = '';
+      document.getElementById('potSize1').value = '100';
+      document.getElementById('stackSize1').value = '1000';
+      document.getElementById('potSize2').value = '200';
+      document.getElementById('callAmount2').value = '50';
+      document.getElementById('potSize3').value = '400';
+      document.getElementById('callAmount3').value = '100';
+      document.getElementById('potSize4').value = '800';
+      document.getElementById('callAmount4').value = '200';
+      document.getElementById('notesArea').value = '';
+      document.getElementById('flopCard1').value = '';
+      document.getElementById('flopCard2').value = '';
+      document.getElementById('flopCard3').value = '';
+      document.getElementById('turnCard').value = '';
+      document.getElementById('riverCard').value = '';
+      document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
+      goToSection(1);
+    }
+
+    // Rangos GTO basados en Red Chip Poker (6-max, 100bb)
+    const GTO_CHARTS = {
+      open_utg: {
+        name: 'Open Raise UTG',
+        raise: ['22+', 'A5s+', 'K7s+', 'Q9s+', 'J9s+', 'T9s', '98s', '87s', 'AJo+', 'KQo', 'QJo'],
+        call: [],
+        fold: ['22-', 'A2s-', 'K6s-', 'Q8s-', 'J8s-', 'T8s-', '97s-', '86s-', '76s-', 'A2o-', 'K9o-', 'QTo-', 'JTo-']
+      },
+      open_hj: {
+        name: 'Open Raise HJ',
+        raise: ['22+', 'A2s+', 'K5s+', 'Q8s+', 'J8s+', 'T8s+', '97s+', '87s', '76s', 'A9o+', 'KTo+', 'QTo', 'JTo'],
+        call: [],
+        fold: ['22-', 'A2s-', 'K4s-', 'Q7s-', 'J7s-', 'T7s-', '96s-', '86s-', '75s-', '65s-', '54s', 'A2o-', 'K9o-', 'Q9o-', 'J9o-', 'T9o-', '98o']
+      },
+      open_co: {
+        name: 'Open Raise CO',
+        raise: ['22+', 'A2s+', 'K2s+', 'Q6s+', 'J7s+', 'T7s+', '97s+', '86s+', '76s', '65s', '54s', 'A7o+', 'K9o+', 'Q9o+', 'J9o+', 'T9o'],
+        call: [],
+        fold: ['22-', 'A2s-', 'K2s-', 'Q5s-', 'J6s-', 'T6s-', '96s-', '85s-', '75s-', '64s-', '53s-', '43s', 'A2o-', 'K8o-', 'Q8o-', 'J8o-', 'T8o-', '97o-', '87o']
+      },
+      open_btn: {
+        name: 'Open Raise BTN',
+        raise: ['22+', 'A2s+', 'K2s+', 'Q2s+', 'J5s+', 'T5s+', '95s+', '85s+', '75s+', '64s', '54s', '43s', '32s', 'A2o+', 'K5o+', 'Q8o+', 'J8o+', 'T8o+', '98o', '87o'],
+        call: [],
+        fold: ['22-', 'A2s-', 'K2s-', 'Q2s-', 'J4s-', 'T4s-', '94s-', '84s-', '74s-', '63s-', '53s-', '42s-', '32s', 'A2o-', 'K4o-', 'Q7o-', 'J7o-', 'T7o-', '97o-', '86o-', '76o']
+      },
+      open_sb: {
+        name: 'Open Raise SB',
+        raise: ['22+', 'A2s+', 'K2s+', 'Q4s+', 'J7s+', 'T7s+', '97s+', '86s+', '75s', '64s', '54s', 'A2o+', 'K7o+', 'Q8o+', 'J8o+', 'T8o+', '98o'],
+        call: [],
+        fold: ['22-', 'A2s-', 'K2s-', 'Q3s-', 'J6s-', 'T6s-', '96s-', '85s-', '74s-', '63s-', '53s-', '43s', '32s', 'A2o-', 'K6o-', 'Q7o-', 'J7o-', 'T7o-', '97o-', '86o-', '75o']
+      },
+      '3bet_vs_utg': {
+        name: '3-Bet vs UTG Raise',
+        raise: ['22+', 'A2s+', 'K9s+', 'Q9s+', 'J9s+', 'T9s', '98s', '87s', 'A9o+', 'KJo+', 'QJo'],
+        call: ['22+', 'A2s+', 'K5s+', 'Q8s+', 'J8s+', 'T8s+', '97s+', '87s', '76s', 'A5o+', 'KTo+', 'QTo', 'JTo'],
+        fold: ['22-', 'A2s-', 'K4s-', 'Q7s-', 'J7s-', 'T7s-', '96s-', '86s-', '75s-', '65s-', '54s', 'A4o-', 'K9o-', 'Q9o-', 'J9o-', 'T9o-', '98o']
+      },
+      '3bet_vs_hj': {
+        name: '3-Bet vs HJ Raise',
+        raise: ['22+', 'A2s+', 'K7s+', 'Q9s+', 'J9s+', 'T9s', '98s', '87s', 'A9o+', 'KJo+', 'QJo'],
+        call: ['22+', 'A2s+', 'K5s+', 'Q8s+', 'J8s+', 'T8s+', '97s+', '87s', '76s', 'A5o+', 'KTo+', 'QTo', 'JTo'],
+        fold: ['22-', 'A2s-', 'K6s-', 'Q8s-', 'J8s-', 'T8s-', '97s-', '87s-', '76s-', '65s-', '54s', 'A4o-', 'KTo-', 'QTo-', 'JTo-', 'T9o-', '98o']
+      },
+      '3bet_vs_co': {
+        name: '3-Bet vs CO Raise',
+        raise: ['22+', 'A2s+', 'K9s+', 'Q9s+', 'J9s+', 'T9s', '98s', '87s', 'A9o+', 'KJo+', 'QJo'],
+        call: ['22+', 'A2s+', 'K5s+', 'Q8s+', 'J8s+', 'T8s+', '97s+', '87s', '76s', 'A5o+', 'KTo+', 'QTo', 'JTo'],
+        fold: ['22-', 'A2s-', 'K8s-', 'Q8s-', 'J8s-', 'T8s-', '97s-', '87s-', '76s-', '65s-', '54s', 'A4o-', 'KTo-', 'QTo-', 'JTo-', 'T9o-', '98o']
+      },
+      '3bet_vs_btn': {
+        name: '3-Bet vs BTN Raise',
+        raise: ['22+', 'A2s+', 'K9s+', 'Q9s+', 'J9s+', 'T9s', '98s', '87s', 'A9o+', 'KJo+', 'QJo'],
+        call: ['22+', 'A2s+', 'K5s+', 'Q8s+', 'J8s+', 'T8s+', '97s+', '87s', '76s', 'A5o+', 'KTo+', 'QTo', 'JTo'],
+        fold: ['22-', 'A2s-', 'K8s-', 'Q8s-', 'J8s-', 'T8s-', '97s-', '87s-', '76s-', '65s-', '54s', 'A4o-', 'KTo-', 'QTo-', 'JTo-', 'T9o-', '98o']
+      },
+      bb_defend: {
+        name: 'BB Defend vs Raise',
+        raise: ['22+', 'A2s+', 'K9s+', 'Q9s+', 'J9s+', 'T9s', '98s', '87s', 'A9o+', 'KJo+', 'QJo'],
+        call: ['22+', 'A2s+', 'K2s+', 'Q2s+', 'J2s+', 'T2s+', '92s+', '82s+', '72s+', '62s+', '52s+', '42s+', '32s', 'A2o+', 'K2o+', 'Q2o+', 'J2o+', 'T2o+', '92o+', '82o+', '72o+', '62o+', '52o+', '42o+', '32o'],
+        fold: []
+      }
+    };
+
+    function showCharts() {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById('section10').classList.add('active');
+      renderChart();
+    }
+
+    function renderChart() {
+      const selector = document.getElementById('chartSelector');
+      const chartKey = selector.value;
+      const chart = GTO_CHARTS[chartKey];
+      const grid = document.getElementById('chartsGrid');
+      grid.innerHTML = '';
+
+      const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+      
+      for (let i = 0; i < ranks.length; i++) {
+        for (let j = 0; j < ranks.length; j++) {
+          const cell = document.createElement('div');
+          cell.className = 'chart-cell';
+          
+          const hi = i < j ? ranks[i] : ranks[j];
+          const lo = i < j ? ranks[j] : ranks[i];
+          const isSuited = i < j;
+          const isPair = i === j;
+          
+          let action = 'fold';
+          let handCode;
+          
+          if (isPair) {
+            handCode = ranks[i] + ranks[j];
+            if (chart.raise.includes(handCode) || chart.raise.includes(handCode[0] + '+')) {
+              action = 'raise';
+            } else if (chart.call.includes(handCode)) {
+              action = 'call';
+            }
+          } else {
+            handCode = hi + lo + (isSuited ? 's' : 'o');
+            const raisePattern = hi + lo + (isSuited ? 's+' : 'o+');
+            const callPattern = hi + lo + (isSuited ? 's' : 'o');
+            
+            if (chart.raise.includes(raisePattern) || chart.raise.includes(handCode)) {
+              action = 'raise';
+            } else if (chart.call.includes(callPattern) || chart.call.includes(handCode)) {
+              action = 'call';
+            }
+          }
+          
+          cell.classList.add(action);
+          cell.textContent = isPair ? ranks[i] + ranks[j] : hi + lo + (isSuited ? 's' : 'o');
+          cell.title = handCode + ': ' + action.toUpperCase();
+          
+          grid.appendChild(cell);
+        }
+      }
+    }
+
+    document.getElementById('handCode').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') startHand();
+    });
+  </script>
+</body>
+</html>

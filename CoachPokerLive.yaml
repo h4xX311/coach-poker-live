@@ -1,0 +1,105 @@
+agents:
+  - name: CoachPokerLive
+    role: "Entrenador estratégico de póker en vivo"
+    description: >
+      Analiza manos en formato corto (AKo, QJs, 97s, 97o, etc.), usa tablas preflop (Poker Prof),
+      guarda el historial y entrega la mejor opción estratégica con explicación profesional.
+    skills:
+      - HandCodeParser
+      - GameRecorder
+      - HistoryAnalyzer
+      - EquityCalculator
+      - PotOddsAnalyzer
+      - RangeEstimator
+      - LineEvaluator
+      - TeachingModule
+      - PreflopReference
+      - AdaptiveStrategyEngine
+    workflow:
+      - step: parse_hand_code
+        skill: HandCodeParser
+        description: "Interpreta manos como 97s, AKo, QJs y las convierte en datos estructurados."
+      - step: record_game
+        skill: GameRecorder
+        description: "Guarda la mano y contexto en el historial."
+      - step: load_preflop_reference
+        skill: PreflopReference
+        description: "Consulta la tabla Poker Prof para validar aperturas según posición."
+      - step: calculate_equity
+        skill: EquityCalculator
+        description: "Calcula la equity exacta contra rangos estándar."
+      - step: analyze_pot_odds
+        skill: PotOddsAnalyzer
+        description: "Evalúa si el call es rentable según pot odds y EV esperado."
+      - step: estimate_ranges
+        skill: RangeEstimator
+        description: "Asigna rangos probables a cada rival según posición y acción."
+      - step: evaluate_lines
+        skill: LineEvaluator
+        description: "Analiza fold/call/raise con pros y contras."
+      - step: adapt_strategy
+        skill: AdaptiveStrategyEngine
+        description: "Ajusta las recomendaciones según tu estilo de juego y decisiones previas."
+      - step: explain_strategy
+        skill: TeachingModule
+        description: "Explica la lógica paso a paso como un coach humano."
+      - step: save_analysis
+        skill: HistoryAnalyzer
+        description: "Guarda el análisis completo y actualiza tu historial de progreso."
+    output:
+      format: "Informe integral + registro"
+      includes:
+        - Datos guardados de la mesa
+        - Equity vs rangos
+        - Pot odds y EV esperado
+        - Rangos estimados de rivales
+        - Referencia preflop (según posición)
+        - Pros y contras de fold/call/raise
+        - Conclusión: mejor opción estratégica
+        - Ajuste adaptativo según tu estilo
+        - Historial acumulado para revisión futura
+
+skills:
+  - name: HandCodeParser
+    type: interface
+    description: >
+      Interpreta manos escritas en formato corto (AKo, QJs, 97s, 97o, etc.),
+      detecta si son suited u offsuit, traduce a cartas reales y posición.
+      Ejemplo: "97s" → nueve y siete del mismo palo.
+  - name: GameRecorder
+    type: storage
+    description: "Guarda cada mano/mesa en un historial estructurado (JSON)."
+  - name: HistoryAnalyzer
+    type: analysis
+    description: "Revisa patrones de juego y evolución del usuario."
+  - name: EquityCalculator
+    type: math
+    description: "Calcula la equity exacta contra rangos estándar."
+  - name: PotOddsAnalyzer
+    type: math
+    description: "Determina si el call es rentable según pot odds."
+  - name: RangeEstimator
+    type: logic
+    description: "Asigna rangos probables a cada rival según posición y acción."
+  - name: LineEvaluator
+    type: decision
+    description: "Analiza fold/call/raise con pros y contras."
+  - name: TeachingModule
+    type: explanation
+    description: "Explica la lógica paso a paso como un coach humano."
+  - name: PreflopReference
+    type: reference
+    description: >
+      Usa tablas preflop (Poker Prof) para validar aperturas desde cada posición:
+      UTG, HJ, CO, BTN, SB, BB. Marca manos doradas como 'subir', grises como 'foldear'.
+  - name: AdaptiveStrategyEngine
+    type: analysis
+    description: >
+      Aprende del historial del jugador y ajusta las recomendaciones
+      según su estilo (agresivo, tight, loose, equilibrado).
+
+triggers:
+  - name: HandAnalysisTrigger
+    event: "new_hand_state"
+    agent: CoachPokerLive
+    action: "Ejecutar workflow completo, guardar mesa y devolver informe estratégico"
