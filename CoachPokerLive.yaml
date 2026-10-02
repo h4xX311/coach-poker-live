@@ -15,6 +15,10 @@ agents:
       - TeachingModule
       - PreflopReference
       - AdaptiveStrategyEngine
+      - SituationDetector
+      - MultiOpponentHandler
+      - StreetDecider
+      - handRanker
     workflow:
       - step: parse_hand_code
         skill: HandCodeParser

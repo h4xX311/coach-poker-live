@@ -56,12 +56,26 @@ function hashSeed(str) {
   return h >>> 0;
 }
 
-/** Combinaciones C(n,k) como array de índices. */
+/**
+ * Combinaciones C(n,k) como array de índices.
+ *
+ * BUG CRÍTICO (corregido): este generador hacía `yield idx` SIN COPIAR.
+ * El consumidor lo materializa con `[...combinations(n, k)]`, así que se
+ * guardaban N PUNTEROS AL MISMO ARRAY. Al terminar el generador, ese array
+ * vale la última combinación y las N entradas del cache son idénticas.
+ *
+ * Consecuencia medida: con 45 cartas y runout de 2, C(45,2)=990 pero solo
+ * 1 combinación distinta — el mismo board evaluado 990 veces. Por eso la
+ * equity postflop salía 0% o 100% (AsAc vs 72o en Kh7d2c daba 100% cuando el
+ * recuento manual da 25.45%: 5166 tablas de 6930 las pierde el rival).
+ *
+ * El `idx.slice()` de abajo es lo que arregla todo el equity postflop.
+ */
 function* combinations(n, k) {
   const idx = Array.from({ length: k }, (_, i) => i);
   if (k > n) return;
   while (true) {
-    yield idx;
+    yield idx.slice();
     let i = k - 1;
     while (i >= 0 && idx[i] === i + n - k) i--;
     if (i < 0) return;
@@ -71,6 +85,17 @@ function* combinations(n, k) {
 }
 
 class EquityCalculator {
+  /**
+   * Caché de resultados. La equity EXACTA es determinista: mismo
+   * (mano, rango, board) da el mismo número siempre. Cachear no puede
+   * devolver un resultado distinto al recalcular.
+   */
+  constructor(opts = {}) {
+    this._cache = new Map();
+    this._cacheHits = 0;
+    this._cacheLimit = opts.cacheLimit || 200;
+  }
+
   /**
    * Convierte una entrada a lista de cartas. Acepta "AhKh", "Ah Kh",
    * ["Ah","Kh"] o [{rank,suit},...].
@@ -246,6 +271,48 @@ class EquityCalculator {
    * @param {object} opts {iterations, seed, metodo: 'auto'|'exact'|'montecarlo'}
    */
   calculate(hero, villainRange, board = [], opts = {}) {
+    // ── CACHÉ (2026-10-02) ──
+    // h4x pidió "más rápido" y lo medido fue 399 ms por consulta. En una
+    // mano real el rango que le asignás al rival cambia poco entre preguntas
+    // ("¿y si betea más?"), así que el MISMO (mano, rango, board) se consulta
+    // varias veces. Con la equity exacta el resultado es determinista:
+    // cachearlo no puede dar un número distinto.
+    const clave = this._cacheKey(hero, villainRange, board);
+    if (clave !== null && !opts.noCache) {
+      if (this._cache.has(clave)) {
+        this._cacheHits++;
+        return this._cache.get(clave);
+      }
+    }
+    const r = this._calculate(hero, villainRange, board, opts);
+    if (clave !== null && !opts.noCache) {
+      this._cache.set(clave, r);
+      // LRU tosco: si se pasa del límite, se vacía. Una sesión de coaching
+      // no llega a eso, así que no vale la pena un LRU de verdad.
+      if (this._cache.size > this._cacheLimit) this._cache.clear();
+    }
+    return r;
+  }
+
+  /** Clave de caché estable, o null si la entrada no es cacheable. */
+  _cacheKey(hero, villainRange, board) {
+    try {
+      const h = Array.isArray(hero)
+        ? hero.map(ckey).sort().join('')
+        : String(hero).trim().toUpperCase();
+      const b = Array.isArray(board)
+        ? board.map(ckey).sort().join('')
+        : String(board || '').trim().toUpperCase();
+      const r = Array.isArray(villainRange)
+        ? villainRange.map(String).sort().join(',').toUpperCase()
+        : String(villainRange).trim().toUpperCase();
+      return `${h}|${b}|${r}`;
+    } catch (e) {
+      return null; // entrada rara: no se cachea, se calcula nomás
+    }
+  }
+
+  _calculate(hero, villainRange, board = [], opts = {}) {
     const heroCards = this._toCards(hero, 'héroe');
     if (heroCards.length !== 2) {
       throw new Error('EquityCalculator: se necesitan exactamente 2 cartas del héroe');
@@ -302,33 +369,104 @@ class EquityCalculator {
       if (res > 0) e.wins++; if (res < 0) e.losses++;
       porMano.set(c.code, e);
     }
-    return this._result(hero, board, comboList, wins, ties, losses, meta, 'exact', 1, porMano);
+    // BUG ARREGLADO: acá se pasaba `1` como iteraciones, así que la equity
+    // salía (wins + ties/2) / 1 * 100. Con 68 combos en el rango daba 6800%.
+    // En el river NO hay runout, así que no hay Monte Carlo que lo tape: el
+    // error salía siempre. El denominador correcto es el conteo real.
+    const iter = comboList.length;
+    return this._result(hero, board, comboList, wins, ties, losses, meta, 'exact', iter, porMano);
   }
 
   /** Enumeración exacta de todas las completaciones del board. */
   _exact(hero, comboList, board, deck, faltan, meta) {
     let wins = 0, ties = 0, losses = 0;
-    const porMano = new Map();
     const boardBase = board.slice();
-    for (const c of comboList) {
-      const tomados = [ckey(c.cards[0]), ckey(c.cards[1])];
-      const posibles = deck.filter(d => !tomados.includes(ckey(d)));
+    const n = boardBase.length + faltan;
 
-      for (const idx of combinations(posibles.length, faltan)) {
-        const full = boardBase.concat(idx.map(i => posibles[i]));
-        const hr = HR.rankCards(full.concat(hero));
-        const vr = HR.rankCards(full.concat(c.cards));
-        let res;
-        if (hr < vr) res = 1; else if (hr > vr) res = -1; else res = 0;
-        if (res > 0) wins++; else if (res === 0) ties++; else losses++;
-        const e = porMano.get(c.code) || { code: c.code, wins: 0, total: 0, losses: 0 };
-        e.total++;
-        if (res > 0) e.wins++; if (res < 0) e.losses++;
-        porMano.set(c.code, e);
+    // ═══════════════════════════════════════════════════════════════════
+    // ESTRUCTURA: RUNOUT ADENTRO, RANGO AFUERA (2026-10-02)
+    //
+    // ANTES: por cada COMBO del rango, por cada runout -> evaluaba TU mano
+    // y la del rival. Tu mano se evaluaba 33.660 veces siendo la MISMA para
+    // un runout dado: se tiraban 32.670 evaluaciones.
+    //
+    // AHORA: por cada RUNOUT, evaluo tu mano UNA vez y después recorro el
+    // rango. Tus evaluaciones bajan de 33.660 a 990.
+    //
+    // El número de tablas NO cambia: cada par (combo, runout) que no se
+    // pisa sigue contándose exactamente una vez. Por eso la equity es
+    // idéntica — ver _verify-perf.js, que lo prueba contra el recuento
+    // manual exhaustivo.
+    // ═══════════════════════════════════════════════════════════════════
+
+    const heroBuf = new Array(n + 2);
+    const villainBuf = new Array(n + 2);
+    for (let i = 0; i < boardBase.length; i++) {
+      heroBuf[i] = boardBase[i];
+      villainBuf[i] = boardBase[i];
+    }
+    heroBuf[n] = hero[0];
+    heroBuf[n + 1] = hero[1];
+
+    // Índice: qué combos contienen cada carta. Evita recorrer el rango
+    // filtrando a mano en cada runout.
+    const combosPorCarta = new Map();
+    for (let i = 0; i < comboList.length; i++) {
+      const c = comboList[i];
+      for (const carta of c.cards) {
+        const k = ckey(carta);
+        if (!combosPorCarta.has(k)) combosPorCarta.set(k, []);
+        combosPorCarta.get(k).push(i);
       }
     }
+
+    const porMano = comboList.map(c => ({
+      code: c.code, wins: 0, total: 0, losses: 0
+    }));
+
+    const runouts = [...combinations(deck.length, faltan)];
+
+    for (const idx of runouts) {
+      // BUG PROPIO QUE ARREGLE: antes tomaba `deck[idx[0]]` y `deck[idx[1]]`
+      // fijos. En el TURN (faltan=1) idx[1] es undefined y reventaba. Ahora
+      // se recorre el runout genérico, que anda para 1, 2 o más cartas.
+      const pisados = new Set();
+      for (let k = 0; k < faltan; k++) {
+        const carta = deck[idx[k]];
+        heroBuf[boardBase.length + k] = carta;
+        villainBuf[boardBase.length + k] = carta;
+        // Combos que pisan esta carta: para ellos la tabla no existe.
+        const lista = combosPorCarta.get(ckey(carta));
+        if (lista) for (const i of lista) pisados.add(i);
+      }
+
+      // Tu mano: UNA evaluación por runout, no una por tabla.
+      const hr = HR.rankCardsFast(heroBuf);
+
+      for (let i = 0; i < comboList.length; i++) {
+        if (pisados.has(i)) continue;
+
+        const c = comboList[i];
+        villainBuf[n] = c.cards[0];
+        villainBuf[n + 1] = c.cards[1];
+        const vr = HR.rankCardsFast(villainBuf);
+
+        const e = porMano[i];
+        e.total++;
+        if (hr < vr) { wins++; e.wins++; }
+        else if (hr > vr) { losses++; e.losses++; }
+        else ties++;
+      }
+    }
+
+    // Map para _result(), que espera pares [código, objeto].
+    const porManoMap = new Map();
+    for (let i = 0; i < comboList.length; i++) {
+      porManoMap.set(comboList[i].code, porMano[i]);
+    }
+
     const iter = wins + ties + losses;
-    return this._result(hero, board, comboList, wins, ties, losses, meta, 'exact', iter, porMano);
+    return this._result(hero, board, comboList, wins, ties, losses, meta, 'exact', iter, porManoMap);
   }
 
   /** Monte Carlo: sortea mano del rango + board. */

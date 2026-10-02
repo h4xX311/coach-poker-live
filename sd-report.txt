@@ -1,0 +1,44 @@
+﻿Ô£ö PREFLOP usa el CHART, no equity (equity viene null) (10.731ms)
+Ô£ö PREFLOP: mano mala en UTG foldea, mano buena sube (3.2801ms)
+Ô£ö PREFLOP: la BB no abre, foldea o defiende (1.9929ms)
+Ô£ö PREFLOP BLOQUEADO: bet del rival sin villainRange -> throw, no inventa (1.2427ms)
+Ô£ö POSTFLOP BLOQUEADO: sin villainRange -> throw, no inventa equity (1.406ms)
+Ô£û POSTFLOP: el caso de FOLD correcto (el m├ís importante) (1169.5913ms)
+Ô£ö POSTFLOP: breakeven = toCall / (pot + toCall) (4392.7721ms)
+Ô£ö POSTFLOP: equity alta + breakeven bajo -> CALL (2895.2756ms)
+Ô£ö POSTFLOP: board con nuts y equity alta -> BET de valor con sizing (1990.0794ms)
+Ô£ö POSTFLOP: en BB/SB el check es gratis (nunca pag├ís para ver una carta) (768.988ms)
+Ô£ö POSTFLOP: sizing ÔÇö board seco se betea m├ís grande que board h├║medo (4850.3034ms)
+Ô£ö POSTFLOP: valida que el board tenga la cantidad correcta de cartas (0.771ms)
+Ô£ö rechaza entradas inv├ílidas con mensaje en espa├▒ol (1.0234ms)
+Ôä╣ tests 13
+Ôä╣ suites 0
+Ôä╣ pass 12
+Ôä╣ fail 1
+Ôä╣ cancelled 0
+Ôä╣ skipped 0
+Ôä╣ todo 0
+Ôä╣ duration_ms 16506.9536
+
+Ô£û failing tests:
+
+test at test\streetDecider.test.js:49:1
+Ô£û POSTFLOP: el caso de FOLD correcto (el m├ís importante) (1169.5913ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'CALL' !== 'FOLD'
+  
+      at TestContext.<anonymous> (C:\Users\La'Roch\coach-poker-live\test\streetDecider.test.js:55:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'CALL',
+    expected: 'FOLD',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

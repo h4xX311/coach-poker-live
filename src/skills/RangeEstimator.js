@@ -92,14 +92,25 @@ class RangeEstimator {
    * Compara la mano del héroe contra el rango estimado del rival.
    */
   compareVsRange(handCode, range) {
-    const code = handCode.toUpperCase().replace(/[^0-9TJQKASO]/, '');
-    const inRange = range.includes(code) || range.includes(code + 's') || range.includes(code + 'o');
+    const code = handCode.toUpperCase().replace(/[^0-9TJQKASO]/g, '');
+    // Normalizar: rank alto primero
+    const R = '23456789TJQKA';
+    const m = code.match(/^([2-9TJQKA])([2-9TJQKA])([SO]?)$/i);
+    let normalized = code;
+    if (m) {
+      const i1 = R.indexOf(m[1].toUpperCase());
+      const i2 = R.indexOf(m[2].toUpperCase());
+      const hi = i1 > i2 ? m[1] : m[2];
+      const lo = i1 > i2 ? m[2] : m[1];
+      normalized = hi + lo + (m[3] || '').toLowerCase();
+    }
+    const inRange = range.includes(normalized) || range.includes(normalized + 's') || range.includes(normalized + 'o');
     
     return {
-      handCode,
+      handCode: normalized,
       inRange,
       rangeSize: range.length,
-      percentile: this._getPercentile(code, range)
+      percentile: this._getPercentile(normalized, range)
     };
   }
 

@@ -159,6 +159,31 @@ function rankCards(cards) {
     }
     seen.add(k);
   }
+  return _rankCore(cs);
+}
+
+/**
+ * Versión SIN validación para el loop caliente de EquityCalculator.
+ * Mismo resultado bit a bit que rankCards, pero sin crear un objeto nuevo
+ * por carta (toCards) ni el Set de duplicados.
+ *
+ * POR QUÉ ES SEGURO USARLA: en la enumeración exacta las cartas NO pueden
+ * repetirse por construcción — las del rango salen del deck ya filtrado y el
+ * runout también. El chequeo de duplicados ahí es puro overhead: son ~500.000
+ * asignaciones por consulta, la mitad del tiempo total.
+ *
+ * NO USAR FUERA de ese loop: si se le pasa una mano con carta repetida,
+ * devuelve un número en vez de tirar error.
+ */
+function rankCardsFast(cs) {
+  return _rankCore(cs);
+}
+
+/**
+ * Núcleo de la evaluación, sin validación de entrada.
+ * Compartido por rankCards (con validación) y rankCardsFast (sin).
+ */
+function _rankCore(cs) {
 
   // 1) Flush: ¿5+ del mismo palo?
   const bySuit = { s: [], h: [], d: [], c: [] };
@@ -294,6 +319,7 @@ function describe(value) {
 module.exports = {
   rank,
   rankCards,
+  rankCardsFast,
   compare,
   describe,
   categoryOf,

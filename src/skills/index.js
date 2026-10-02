@@ -12,6 +12,7 @@ const LineEvaluator = require('./LineEvaluator');
 const TeachingModule = require('./TeachingModule');
 const PreflopReference = require('./PreflopReference');
 const AdaptiveStrategyEngine = require('./AdaptiveStrategyEngine');
+const DrawDetector = require('./DrawDetector');
 
 module.exports = {
   HandCodeParser,
@@ -23,5 +24,10 @@ module.exports = {
   LineEvaluator,
   TeachingModule,
   PreflopReference,
-  AdaptiveStrategyEngine
+  AdaptiveStrategyEngine,
+  DrawDetector,
+  SituationDetector: require('./SituationDetector'),
+  MultiOpponentHandler: require('./MultiOpponentHandler'),
+  StreetDecider: require('./StreetDecider'),
+  handRanker: require('./handRanker')
 };

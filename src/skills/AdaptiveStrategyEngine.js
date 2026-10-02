@@ -29,8 +29,9 @@ class AdaptiveStrategyEngine {
       else if (action === 'CALL') calls++;
       else if (action === 'RAISE') raises++;
 
-      if (h.analysis?.equity) {
-        totalEquity += h.analysis.equity;
+      const equity = typeof h.analysis?.equity === 'number' ? h.analysis.equity : h.analysis?.equity?.equity;
+      if (equity && !isNaN(equity)) {
+        totalEquity += equity;
         equityCount++;
       }
     });

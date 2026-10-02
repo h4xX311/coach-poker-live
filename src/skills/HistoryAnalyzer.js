@@ -42,8 +42,9 @@ class HistoryAnalyzer {
       const action = h.analysis?.bestLine || h.action || 'FOLD';
       if (actions[action] !== undefined) actions[action]++;
       
-      if (h.analysis?.equity) {
-        totalEquity += h.analysis.equity;
+      const equity = typeof h.analysis?.equity === 'number' ? h.analysis.equity : h.analysis?.equity?.equity;
+      if (equity && !isNaN(equity)) {
+        totalEquity += equity;
         equityCount++;
       }
     });

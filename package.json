@@ -1,12 +1,13 @@
 {
   "name": "coach-poker-live",
-  "version": "1.0.0",
-  "description": "",
+  "version": "3.0.0",
+  "description": "Agente entrenador de póker en vivo con IA",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
   },
-  "keywords": [],
+  "keywords": ["poker", "coach", "ai", "telegram"],
   "author": "",
   "license": "ISC",
   "type": "commonjs",

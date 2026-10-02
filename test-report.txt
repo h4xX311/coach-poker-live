@@ -1,0 +1,276 @@
+﻿Ô£ö REGRESI├ôN: AA vs KK Ôëê 82% (no 100%) ÔÇö el bug 1 del motor viejo (8563.6412ms)
+Ô£ö REGRESI├ôN: contra un rango sim├®trico NO da 50% (el motor tiene que repartir) (3708.172ms)
+Ô£ö postflop: contra un rango declarado y board fijo, el m├®todo es EXACTO (36.0928ms)
+Ô£ö postflop: completa el board hasta 5 cartas y compara (turn y river) (208.3662ms)
+Ô£ö RANGO RESPETADO: contra "AsKs" el rival NUNCA puede recibir 3sJd (24.7259ms)
+Ô£ö RANGO RESPETADO: las cartas del h├®roe y del board bloquean manos del rango (0.8433ms)
+Ô£ö parseRange: conteos de combinaciones correctos (0.7228ms)
+Ô£ö parseRange: bloquea notaci├│n que no entiende, en espa├▒ol (0.9516ms)
+Ô£ö Monte Carlo es determinista con la misma seed (3810.4156ms)
+Ô£ö reporta qu├® mano te mata y con qu├® frecuencia (573.8014ms)
+Ô£ö el runout NUNCA reparte una carta del rival (si no, el ranker lo detecta) (3687.1112ms)
+Ô£ö BLOQUEA rangos que quedan totalmente tapados por cartas ya repartidas (0.9516ms)
+Ô£ö jerarqu├¡a base: straight flush > quads > full house > flush > straight > trips > two pair > pair > high card (13.578ms)
+Ô£ö ADVERSARIAL: par de ases > par de reyes > par de reinas > par de jotas (menor = mejor) (0.9824ms)
+Ô£ö ADVERSARIAL: mismo par, kicker distinto manda (0.5284ms)
+Ô£ö ADVERSARIAL: dos pares, mismo par alto, kicker distinto (0.8707ms)
+Ô£ö ADVERSARIAL: dos full houses ÔÇö el par M├üS ALTO gana (AAA33 > AAA22 > KKKAA) (1.3611ms)
+Ô£ö ADVERSARIAL: full house, orden de cartas no importa (1.3059ms)
+Ô£ö ADVERSARIAL: tr├¡os con kicker distinto (el bug 2 del motor viejo) (9.1249ms)
+Ô£ö ADVERSARIAL: la rueda NO es Broadway, y Broadway S├ì es Broadway (1.7318ms)
+Ô£ö ADVERSARIAL: escalera de color ÔÇö la rueda de color es la peor; color normal es peor que cualquier esc. de color (2.406ms)
+Ô£ö funciona con 5, 6 y 7 cartas (2.3024ms)
+Ô£ö rank(board, hole) es equivalente a rankCards(board+hole) (7.013ms)
+Ô£ö best-5 de 7: usa las 5 mejores, no las 5 primeras (0.5742ms)
+Ô£ö rechaza entradas inv├ílidas con mensaje en espa├▒ol (2.2181ms)
+Ô£û PREFLOP usa el CHART, no equity (equity viene null) (11.1474ms)
+Ô£û PREFLOP: mano mala en UTG foldea, mano buena sube (0.6286ms)
+Ô£ö PREFLOP: la BB no abre, foldea o defiende (1.8266ms)
+Ô£û PREFLOP BLOQUEADO: bet del rival sin villainRange -> throw, no inventa (3.2186ms)
+Ô£û POSTFLOP BLOQUEADO: sin villainRange -> throw, no inventa equity (0.9573ms)
+Ô£û POSTFLOP: el caso de FOLD correcto (el m├ís importante) (0.905ms)
+Ô£û POSTFLOP: breakeven = toCall / (pot + toCall) (0.8118ms)
+Ô£û POSTFLOP: equity alta + breakeven bajo -> CALL (0.9631ms)
+Ô£û POSTFLOP: board con nuts y equity alta -> BET de valor con sizing (0.6758ms)
+Ô£û POSTFLOP: en BB/SB el check es gratis (nunca pag├ís para ver una carta) (1.5658ms)
+Ô£û POSTFLOP: sizing ÔÇö board seco se betea m├ís grande que board h├║medo (1.7138ms)
+Ô£û POSTFLOP: valida que el board tenga la cantidad correcta de cartas (0.8522ms)
+Ô£û rechaza entradas inv├ílidas con mensaje en espa├▒ol (0.8493ms)
+Ôä╣ tests 38
+Ôä╣ suites 0
+Ôä╣ pass 26
+Ôä╣ fail 12
+Ôä╣ cancelled 0
+Ôä╣ skipped 0
+Ôä╣ todo 0
+Ôä╣ duration_ms 21028.5892
+
+Ô£û failing tests:
+
+test at test\streetDecider.test.js:11:1
+Ô£û PREFLOP usa el CHART, no equity (equity viene null) (11.1474ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'CHECK' !== 'RAISE'
+  
+      at TestContext.<anonymous> (C:\Users\La'Roch\coach-poker-live\test\streetDecider.test.js:16:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'CHECK',
+    expected: 'RAISE',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\streetDecider.test.js:22:1
+Ô£û PREFLOP: mano mala en UTG foldea, mano buena sube (0.6286ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'CHECK' !== 'FOLD'
+  
+      at TestContext.<anonymous> (C:\Users\La'Roch\coach-poker-live\test\streetDecider.test.js:25:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'CHECK',
+    expected: 'FOLD',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\streetDecider.test.js:35:1
+Ô£û PREFLOP BLOQUEADO: bet del rival sin villainRange -> throw, no inventa (3.2186ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (C:\Users\La'Roch\coach-poker-live\test\streetDecider.test.js:36:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /BLOQUEADO/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\streetDecider.test.js:42:1
+Ô£û POSTFLOP BLOQUEADO: sin villainRange -> throw, no inventa equity (0.9573ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (C:\Users\La'Roch\coach-poker-live\test\streetDecider.test.js:43:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /BLOQUEADO/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\streetDecider.test.js:49:1
+Ô£û POSTFLOP: el caso de FOLD correcto (el m├ís importante) (0.905ms)
+  AssertionError [ERR_ASSERTION]: equity undefined% debe ser < breakeven undefined%
+      at TestContext.<anonymous> (C:\Users\La'Roch\coach-poker-live\test\streetDecider.test.js:56:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test\streetDecider.test.js:60:1
+Ô£û POSTFLOP: breakeven = toCall / (pot + toCall) (0.8118ms)
+  AssertionError [ERR_ASSERTION]: breakeven = 12/42 = 28.57%
+      at TestContext.<anonymous> (C:\Users\La'Roch\coach-poker-live\test\streetDecider.test.js:65:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test\streetDecider.test.js:68:1
+Ô£û POSTFLOP: equity alta + breakeven bajo -> CALL (0.9631ms)
+  AssertionError [ERR_ASSERTION]: esperaba CALL/RAISE, dio FOLD
+      at TestContext.<anonymous> (C:\Users\La'Roch\coach-poker-live\test\streetDecider.test.js:73:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test\streetDecider.test.js:77:1
+Ô£û POSTFLOP: board con nuts y equity alta -> BET de valor con sizing (0.6758ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'CHECK' !== 'BET'
+  
+      at TestContext.<anonymous> (C:\Users\La'Roch\coach-poker-live\test\streetDecider.test.js:82:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'CHECK',
+    expected: 'BET',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\streetDecider.test.js:86:1
+Ô£û POSTFLOP: en BB/SB el check es gratis (nunca pag├ís para ver una carta) (1.5658ms)
+  AssertionError [ERR_ASSERTION]: The "string" argument must be of type string. Received type undefined (undefined)
+      at TestContext.<anonymous> (C:\Users\La'Roch\coach-poker-live\test\streetDecider.test.js:92:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /gratis/i,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at test\streetDecider.test.js:95:1
+Ô£û POSTFLOP: sizing ÔÇö board seco se betea m├ís grande que board h├║medo (1.7138ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'seco'
+  
+      at TestContext.<anonymous> (C:\Users\La'Roch\coach-poker-live\test\streetDecider.test.js:104:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'seco',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\streetDecider.test.js:113:1
+Ô£û POSTFLOP: valida que el board tenga la cantidad correcta de cartas (0.8522ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (C:\Users\La'Roch\coach-poker-live\test\streetDecider.test.js:114:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /3 cartas/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\streetDecider.test.js:120:1
+Ô£û rechaza entradas inv├ílidas con mensaje en espa├▒ol (0.8493ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (C:\Users\La'Roch\coach-poker-live\test\streetDecider.test.js:121:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /falta "street"/,
+    operator: 'throws',
+    diff: 'simple'
+  }

@@ -3,6 +3,7 @@
  */
 
 const skills = require('./skills');
+const handRanker = require('./handRanker');
 
 class WorkflowEngine {
   constructor(config) {
@@ -59,7 +60,7 @@ class WorkflowEngine {
       position: handState.position || 'BTN',
       potSize: handState.potSize || 0,
       callAmount: handState.callAmount || 0,
-      raiseAmount: handState.raiseAmount || handState.callAmount * 2 || 0,
+      raiseAmount: handState.raiseAmount !== undefined ? handState.raiseAmount : (handState.callAmount || 0) * 2,
       villainPosition: handState.villainPosition || 'UTG',
       villainAction: handState.villainAction || 'raise',
       stackSize: handState.stackSize || 1000,
@@ -129,20 +130,32 @@ class WorkflowEngine {
     const potOdds = this._getSkill('PotOddsAnalyzer');
     results.potOdds = potOdds.analyze(ctx.potSize, ctx.callAmount, results.equity.equity);
 
-    // Paso 7: Evaluar líneas de juego
-    const lineEval = this._getSkill('LineEvaluator');
-    results.lines = lineEval.evaluate({
-      equity: results.equity.equity,
-      potSize: ctx.potSize,
-      callAmount: ctx.callAmount,
-      raiseAmount: ctx.raiseAmount,
-      foldEquity: ctx.foldEquity,
+    // Paso 7: Evaluar líneas de juego usando StreetDecider
+    const streetDecider = this._getSkill('StreetDecider');
+    const heroCardsStr = `${results.parsedHand.card1.rank}${results.parsedHand.card1.suit}${results.parsedHand.card2.rank}${results.parsedHand.card2.suit}`;
+    const boardStr = (handState.board || []).join('');
+    
+    const decision = streetDecider.decide({
+      street: isPreflop ? 'preflop' : ctx.street,
+      hole: heroCardsStr,
+      board: boardStr,
+      pot: ctx.potSize,
+      toCall: ctx.callAmount,
+      stack: ctx.stackSize,
       position: ctx.position,
-      stackSize: ctx.stackSize,
-      handCode: ctx.handCode,
-      preflopAction: results.preflopReference?.action || 'FOLD',
-      inOpeningRange: results.preflopReference?.color !== 'gray'
+      villainAction: ctx.villainAction,
+      villainRange: '22+,A2s+,K2s+,Q2s+,J2s+,T2s+,92s+,82s+,72s+,62s+,52s+,42s+,32s,A2o+,K2o+,Q2o+,J2o+,T2o+,92o+,82o+,72o+,62o+,52o+,42o+,32o'
     });
+    
+    results.lines = {
+      best: decision.action,
+      lines: [
+        { action: 'FOLD', ev: 0, recommendation: decision.action === 'FOLD' ? 'Correcto' : 'No recomendado' },
+        { action: 'CALL', ev: 0, recommendation: decision.action === 'CALL' ? 'Correcto' : 'No recomendado' },
+        { action: 'RAISE', ev: 0, recommendation: decision.action === 'RAISE' ? 'Correcto' : 'No recomendado' }
+      ],
+      reasoning: decision.razonamiento
+    };
 
     // Paso 8: Estrategia adaptativa
     const adaptive = this._getSkill('AdaptiveStrategyEngine');
@@ -162,12 +175,12 @@ class WorkflowEngine {
     results.explanation = teaching.explain(results);
     results.quickSummary = teaching.quickSummary(results);
 
-    // Paso 10: Guardar en historial
+    // Paso 10: Guardar en historial (una sola vez)
     const recorder = this._getSkill('GameRecorder');
     results.savedRecord = recorder.record({
       parsedHand: results.parsedHand,
       position: ctx.position,
-      action: ctx.villainAction,
+      action: results.lines.best,
       potSize: ctx.potSize,
       callAmount: ctx.callAmount,
       analysis: results
@@ -177,16 +190,6 @@ class WorkflowEngine {
     const historyAnalyzer = this._getSkill('HistoryAnalyzer');
     const fullHistory = recorder.getHistory().hands;
     results.historyAnalysis = historyAnalyzer.analyze(fullHistory);
-
-    // Guardar análisis actualizado con historial
-    recorder.record({
-      parsedHand: results.parsedHand,
-      position: ctx.position,
-      action: results.lines.best,
-      potSize: ctx.potSize,
-      callAmount: ctx.callAmount,
-      analysis: results
-    });
 
     return results;
   }
@@ -220,6 +223,8 @@ class WorkflowEngine {
         return skill.analyze(input.potSize, input.callAmount, input.equity);
       case 'LineEvaluator':
         return skill.evaluate(input.context);
+      case 'StreetDecider':
+        return skill.decide(input);
       case 'TeachingModule':
         return skill.explain(input.analysis);
       case 'AdaptiveStrategyEngine':

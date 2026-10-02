@@ -75,7 +75,7 @@ class CoachPokerLiveAgent {
       format: outputConfig.format,
       timestamp: new Date().toISOString(),
       hand: analysis.parsedHand,
-      position: analysis.adaptiveAdjustment?.playerStyle || 'unknown',
+      position: analysis.situation?.position || analysis.adaptiveAdjustment?.playerStyle || 'unknown',
       analysis: {
         situation: analysis.situation,
         preflop: analysis.preflopReference,
